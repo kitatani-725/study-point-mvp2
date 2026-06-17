@@ -1,0 +1,2977 @@
+/* デザイン基準: 1080px × 1920px。スマホ幅基準でスケール */
+:root {
+  --footer-height: 95px;
+  --ad-banner-fixed-height: 100px;
+  --banner-under-footer-height: 50px;
+  /* フッター translateY と合わせたデザイン上のオフセット */
+  --footer-visual-offset: 27px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  /* 固定フッター実高さ（iPhone のホームインジケータ分を含む） */
+  --footer-stack-height: calc(var(--footer-height) + var(--safe-area-bottom));
+  /* フッター（translateY 後の見え方）+ 直上の 320×50 バナー */
+  --bottom-fixed-chrome: calc(
+    var(--footer-stack-height) - var(--footer-visual-offset) + var(--banner-under-footer-height)
+  );
+  --home-scroll-padding-bottom: calc(var(--bottom-fixed-chrome) + 12px);
+  /* 重なり順（footer < modal < toast） */
+  --z-footer: 1000;
+  --z-banner-under-footer: 1001;
+  --z-modal-mission: 1500;
+  --z-modal-base: 2000;
+  --z-modal-garapon-help: 2100;
+  --z-modal-reward-history: 2200;
+  --z-modal-referral: 2400;
+  --z-modal-nickname: 2500;
+  --z-modal-icon: 2500;
+  --z-toast: 3100;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 独自モーダル表示中は背面スクロールを止める（iOS Safari 含む） */
+html.app-scroll-locked,
+html.app-scroll-locked body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+html.app-scroll-locked body {
+  touch-action: none;
+}
+html.app-scroll-locked #app {
+  overflow: hidden;
+  touch-action: none;
+}
+html.app-scroll-locked .home-viewport,
+html.app-scroll-locked .account-screen,
+html.app-scroll-locked .calendar-screen,
+html.app-scroll-locked .worklog-screen,
+html.app-scroll-locked .game-viewport,
+html.app-scroll-locked .garapon-screen,
+html.app-scroll-locked .garapon-viewport {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  background: #f2f2f2;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+#app:has(.result-screen),
+#app:has(.account-screen),
+#app:has(.game-screen),
+#app:has(.game-viewport),
+#app:has(.garapon-screen) {
+  padding-bottom: var(--footer-height);
+}
+#app:has(.calendar-screen),
+#app:has(.worklog-screen) {
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 100%;
+  min-width: 0;
+  padding-bottom: var(--home-scroll-padding-bottom);
+}
+/* 作業画面ではフッター・バナーを非表示 */
+body.work-screen-active .app-footer,
+body.work-screen-active .app-banner-under-footer {
+  display: none;
+}
+body.garapon-screen-active .app-banner-under-footer {
+  display: none !important;
+}
+#app:has(.account-screen),
+#app:has(.game-viewport),
+#app:has(.garapon-screen) {
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+/* --- ゲーム画面（375×667 基準の絶対配置 + 幅基準スケール） --- */
+.game-viewport {
+  width: 100%;
+  min-height: calc(100dvh - var(--footer-height));
+  padding-bottom: var(--footer-height);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+}
+.game-scale-wrapper {
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.game-container {
+  position: relative;
+  width: 375px;
+  height: 1250px; /* 下部SNSまでのスクロール余白 */
+  transform-origin: top left;
+}
+
+/* 指定位置・サイズ（375×667 座標） */
+.game-pig-img {
+  position: absolute;
+  left: 59.4px;
+  top: 37.5px;
+  width: 68.4px;
+  height: 77.9px;
+}
+.game-points {
+  position: absolute;
+  left: 189px;
+  top: 37.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-tickets {
+  position: absolute;
+  left: 189px;
+  top: 88px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-points-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.game-tickets-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.game-points-value,
+.game-tickets-value {
+  display: inline-block;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #111;
+}
+.game-garapon {
+  position: absolute;
+  left: 19px;
+  top: 184px;
+  width: 337px;
+  height: 112px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.game-garapon:active {
+  opacity: 0.92;
+  transform: scale(0.995);
+}
+.game-garapon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+/* ガラポン直下〜先頭 game-btn（416.4px）のあいだ。寸法は後で調整 */
+.game-banner-140 {
+  position: absolute;
+  left: 40.5px;
+  top: 332px;
+  width: 291px;
+  height: auto;
+  max-height: 76px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+.game-secondary {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.game-action-row {
+  position: absolute;
+  left: 40.5px;
+  top: 132px;
+  width: 291px;
+  height: 40px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 14px;
+}
+.game-action-btn {
+  flex: 1 1 0;
+  height: 40px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1.2px solid #000;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-action-btn:active {
+  opacity: 0.88;
+}
+.game-btn {
+  position: absolute;
+  left: 40.5px;
+  width: 291px;
+  height: 56px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.game-btn:active {
+  opacity: 0.92;
+  transform: scale(0.995);
+}
+.game-btn-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* SNS行（キャンバス最下部・1250px） */
+.game-sns-label {
+  position: absolute;
+  left: 0;
+  top: calc(1250px - 56px - 12px - 27px);
+  width: 375px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #39c6d6;
+  text-align: center;
+}
+.game-sns-row {
+  position: absolute;
+  left: 0;
+  top: calc(1250px - 56px - 12px);
+  width: 375px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+}
+.game-sns-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+.game-sns-btn:active {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+.game-sns-icon {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  pointer-events: none;
+}
+/* 最下段 game-btn（225: 660.2+56）直下〜ギフトの間：300×250 バナー予定地 */
+.game-ad-banner-slot {
+  position: absolute;
+  left: 37.5px;
+  top: 736px;
+  width: 300px;
+  height: 250px;
+  box-sizing: border-box;
+  border: 2px dashed #bdbdbd;
+  border-radius: 10px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+/* プレゼントボックス＋右上バッジ（200.svg） */
+.game-gift-wrap {
+  position: absolute;
+  left: 50%;
+  top: 1006px;
+  transform: translateX(-50%);
+  width: 168px;
+  line-height: 0;
+}
+.game-gift-badge {
+  position: absolute;
+  top: -4px;
+  right: -43px;
+  width: 98px;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+  transform: rotate(20deg);
+  transform-origin: center center;
+}
+.game-gift {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 0;
+}
+.game-gift:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.game-gift-img {
+  display: block;
+  width: 168px;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* --- 豚ガラポン画面（375×724：バナーは所持チケットピル直下、幅基準スケール） --- */
+.garapon-screen {
+  width: 100%;
+  min-height: calc(100dvh - var(--footer-height));
+  box-sizing: border-box;
+  background: #fff;
+  overflow-x: hidden;
+}
+.garapon-viewport {
+  width: 100%;
+  min-height: calc(100dvh - var(--footer-height));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: var(--footer-height);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+.garapon-scale-wrapper--garapon {
+  overflow: visible;
+  flex-shrink: 0;
+}
+.garapon-container {
+  position: relative;
+  width: 375px;
+  height: 724px;
+  transform-origin: top left;
+  background: #fff;
+}
+/* 参考座標（375×724） */
+.garapon-container .garapon-back {
+  position: absolute;
+  left: 7.7px;
+  top: calc(24.3px - 12px);
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #111;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.garapon-container .garapon-title-img {
+  position: absolute;
+  left: 72.8px;
+  top: 17.5px;
+  width: 229.5px;
+  height: 40.1px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+.garapon-container .garapon-help {
+  position: absolute;
+  left: 319px;
+  top: calc(39.7px - 21px);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: #f5e6a8;
+  color: #111;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ガラポン：ヘルプ */
+.garapon-help-overlay.app-modal-overlay {
+  z-index: var(--z-modal-garapon-help);
+}
+
+.garapon-help-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  z-index: var(--z-modal-garapon-help);
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.garapon-help-sheet {
+  position: relative;
+  width: min(340px, 100%);
+  max-height: min(520px, 85vh);
+  background: #fff;
+  border: 2px solid #111;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.garapon-help-title {
+  margin: 0;
+  padding: 14px 48px 12px 16px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111;
+  border-bottom: 2px solid #111;
+  background: #e8fbfd;
+}
+
+.garapon-help-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 16px 18px;
+}
+
+.garapon-help-section + .garapon-help-section {
+  margin-top: 16px;
+}
+
+.garapon-help-section-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #111;
+}
+
+.garapon-help-tier-list,
+.garapon-help-icon-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.garapon-help-tier-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fafafa;
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+}
+
+.garapon-help-tier-row + .garapon-help-tier-row {
+  margin-top: 6px;
+}
+
+.garapon-help-tier-pt {
+  color: #0891b2;
+}
+
+.garapon-help-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #333;
+}
+
+.garapon-help-text + .garapon-help-text {
+  margin-top: 8px;
+}
+
+.garapon-help-text--sub {
+  font-size: 12px;
+  color: #555;
+}
+
+.garapon-help-icon-name {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+}
+
+.garapon-help-icon-name + .garapon-help-icon-name {
+  margin-top: 6px;
+}
+
+.garapon-help-icon-name--empty {
+  color: #777;
+  font-weight: 500;
+}
+
+.garapon-help-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  width: 31px;
+  height: 31px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+.garapon-help-close:active {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.garapon-container .garapon-mascot {
+  position: absolute;
+  left: 0;
+  top: 65.4px;
+  width: 90px;
+  height: 108px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.garapon-wheel-zone {
+  position: absolute;
+  left: 85.5px;
+  top: 86.5px;
+  width: 204px;
+  height: 204px;
+}
+.garapon-wheel-zone .garapon-pointer {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  margin-left: -11px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 16px solid #111;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+}
+.garapon-wheel-zone .garapon-wheel-outer {
+  width: 204px;
+  height: 204px;
+  margin: 0;
+  border-radius: 50%;
+  border: 4px solid #222;
+  box-sizing: border-box;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.12), inset 0 4px 12px rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  background: #333;
+}
+.garapon-wheel-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  transform-origin: 50% 50%;
+  --garapon-segment-deg: calc(360deg / 7);
+  background: conic-gradient(
+    #ffffff 0deg calc(360deg / 7),
+    #2563eb calc(360deg / 7) calc(360deg / 7 * 2),
+    #16a34a calc(360deg / 7 * 2) calc(360deg / 7 * 3),
+    #dc2626 calc(360deg / 7 * 3) calc(360deg / 7 * 4),
+    #eab308 calc(360deg / 7 * 4) calc(360deg / 7 * 5),
+    #fbbf24 calc(360deg / 7 * 5) calc(360deg / 7 * 6),
+    #c084fc calc(360deg / 7 * 6) 360deg
+  );
+}
+.garapon-wheel-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  margin-left: -16px;
+  margin-top: -14px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  transform: rotate(calc(var(--i) * var(--garapon-segment-deg) + var(--garapon-segment-deg) / 2)) translateY(-71px);
+}
+.garapon-wheel-label--star {
+  width: 28px;
+  margin-left: -14px;
+  font-size: 18px;
+  line-height: 1;
+}
+.garapon-wheel-label[data-tier='star'] {
+  color: #4c1d95;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.65);
+}
+.garapon-wheel-label[data-tier='6'] {
+  color: #222;
+}
+.garapon-wheel-label[data-tier='5'],
+.garapon-wheel-label[data-tier='4'],
+.garapon-wheel-label[data-tier='3'] {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.garapon-wheel-label[data-tier='2'] {
+  color: #111;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+.garapon-wheel-label[data-tier='1'] {
+  color: #78350f;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+.garapon-container .garapon-spin-btn {
+  position: absolute;
+  left: 52.1px;
+  top: 308.5px;
+  width: calc(375px - 52.1px * 2);
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 14px;
+  background: #2dd4e8;
+  color: #111;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.garapon-spin-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.garapon-spin-ticket-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.garapon-container .garapon-balance-column {
+  position: absolute;
+  left: 0;
+  top: 406px;
+  width: 375px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.garapon-container .garapon-balance-pill {
+  position: relative;
+  margin: -37px 0 0;
+  max-width: none;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+.garapon-balance-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.garapon-container .garapon-ad-banner-slot {
+  position: relative;
+  flex-shrink: 0;
+  width: 300px;
+  height: 250px;
+  box-sizing: border-box;
+  border: 2px dashed #bdbdbd;
+  border-radius: 10px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.garapon-result {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 16px;
+  border-radius: 14px;
+  text-align: center;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+.garapon-result-tier {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.garapon-result-points {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+/* 6等→白 5等→青 4等→緑 3等→赤 2等→黄 1等→金 */
+.garapon-result--tier-6 {
+  background: #fff;
+  color: #111;
+  border-color: #bbb;
+}
+.garapon-result--tier-5 {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.garapon-result--tier-4 {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+}
+.garapon-result--tier-3 {
+  background: #dc2626;
+  color: #fff;
+  border-color: #b91c1c;
+}
+.garapon-result--tier-2 {
+  background: #eab308;
+  color: #111;
+  border-color: #ca8a04;
+}
+.garapon-result--tier-1 {
+  background: linear-gradient(145deg, #fde047, #f59e0b);
+  color: #78350f;
+  border-color: #d97706;
+}
+
+/* Home: 1080×1920 デザインコンテナ（scale は JS で適用・スマホ幅基準） */
+.home-viewport {
+  width: 100%;
+  min-height: calc(100dvh - var(--footer-stack-height));
+  padding-bottom: var(--home-scroll-padding-bottom);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home-scale-wrapper {
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.home-container {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  transform-origin: top left;
+}
+
+.home-top-strip-bg {
+  position: absolute;
+  left: 0;
+  top: 162px;
+  width: 1080px;
+  height: 540px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* (1) 豚チケット（左）と pt（右）を左右対称に 324×130 @ 28.3, 115.2（25.2 + 90px 下げ） */
+.home-top-boxes {
+  position: absolute;
+  left: 28.3px;
+  top: 115.2px;
+  right: 28.3px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+.home-ticket-box,
+.home-point-box {
+  width: 324px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 12px;
+  border: 2px solid #000;
+  border-radius: 12px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.home-ticket-box .home-ticket-icon {
+  width: 150px;
+  height: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.home-ticket-box .home-ticket-count {
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+.home-point-box .home-point-coin {
+  width: 80px;
+  height: 85px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.home-point-box .point-text {
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+.home-point-box .point-text.point-text--many-digits {
+  font-size: 36px;
+}
+.home-point-box .point-text.point-text--more-digits {
+  font-size: 28px;
+}
+.home-mission-btn {
+  position: relative;
+  flex-shrink: 0;
+  width: 105px;
+  height: 41px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.home-mission-icon {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+}
+.home-mission-badge {
+  position: absolute;
+  top: -30px;
+  right: -6px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e53935;
+  border: 2px solid #fff;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* 共通モーダル overlay（既存 class と併用可） */
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: var(--z-modal-base);
+}
+.app-modal-overlay.app-modal-open,
+.app-modal-overlay.modal-open,
+.mission-overlay.mission-overlay--open.app-modal-overlay {
+  display: flex;
+  pointer-events: auto;
+}
+
+/* ミッションオーバーレイ 450×630 → 画面に合わせて縮小 */
+.mission-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-mission);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.mission-overlay.mission-overlay--open {
+  display: flex;
+  pointer-events: auto;
+}
+
+/* ゲーム画面：獲得履歴（reward_logs） */
+.reward-history-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-reward-history);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.reward-history-overlay.app-modal-open {
+  display: flex;
+  pointer-events: auto;
+}
+.reward-history-dialog {
+  width: min(420px, 100%);
+  max-height: min(560px, 85vh);
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+.reward-history-title {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 18px;
+  font-weight: bold;
+  border-bottom: 2px solid #000;
+  color: #111;
+}
+.reward-history-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 120px;
+}
+.reward-history-status {
+  margin: 0;
+  padding: 20px 16px;
+  text-align: center;
+  color: #555;
+  font-size: 15px;
+}
+.reward-history-error {
+  margin: 0;
+  padding: 16px;
+  color: #b71c1c;
+  font-size: 14px;
+}
+.reward-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.reward-history-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #222;
+}
+.reward-history-row-meta {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.reward-history-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.reward-history-type {
+  font-weight: bold;
+}
+.reward-history-amount {
+  font-weight: bold;
+  color: #1565c0;
+  white-space: nowrap;
+}
+.reward-history-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #ccc;
+  flex-shrink: 0;
+}
+.reward-history-close-btn {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid #000;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.mission-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+.mission-panel-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.mission-panel-close {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--footer-height) / 2 - 20px);
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 24px;
+  line-height: 1;
+  color: #333;
+  cursor: pointer;
+  z-index: 1501;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.mission-panel {
+  position: relative;
+  width: 450px;
+  max-width: 100%;
+  height: 630px;
+  max-height: calc(100vh - 32px);
+  background: #fff;
+  border-radius: 16px;
+  border: 2px solid #000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  transform-origin: center center;
+  overflow: hidden;
+}
+.mission-tabs {
+  display: flex;
+  border-bottom: 2px solid #000;
+  flex-shrink: 0;
+}
+.mission-tab {
+  flex: 1;
+  padding: 14px 4px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mission-tab.mission-tab--active {
+  background: #b2ebf2;
+  border-bottom-color: #000;
+}
+.mission-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+.mission-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ccc;
+  background: #fff;
+}
+.mission-item[type="button"] {
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.mission-item.mission-item--done {
+  background: #fff9c4;
+  color: #333;
+}
+.mission-item.mission-item--claimed {
+  background: #d9d9d9;
+  color: #555;
+}
+.mission-item.mission-item--done .mission-label,
+.mission-item.mission-item--claimed .mission-label {
+  color: inherit;
+}
+.mission-item.mission-item--done .mission-reward-qty,
+.mission-item.mission-item--claimed .mission-reward-qty {
+  color: inherit;
+}
+.mission-reward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.mission-reward-icon {
+  width: 41px;
+  height: 41px;
+  max-width: 41px;
+  max-height: 41px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
+}
+.mission-reward-qty {
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.2;
+  min-height: calc(14px * 1.2);
+}
+.mission-reward-qty:empty {
+  display: block;
+}
+.mission-label {
+  flex: 1;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+.mission-empty {
+  padding: 24px;
+  text-align: center;
+  color: #666;
+  margin: 0;
+}
+.mission-claim-all {
+  flex-shrink: 0;
+  margin: 16px;
+  padding: 16px 24px;
+  font-size: 20px;
+  font-weight: bold;
+  border: 2px solid #000;
+  border-radius: 12px;
+  background: #fff59d;
+  color: #333;
+  cursor: pointer;
+}
+.mission-claim-all:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* (2) ブタ：チケット行下〜動画ボタン上のスロット 240×335 / top 301（351−50） */
+.home-pig-wrapper {
+  position: absolute;
+  left: 42px;
+  top: 301px;
+  width: 240px;
+  height: 335px;
+  overflow: hidden;
+}
+.home-pig-wrapper .home-pig {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* (3) 砂時計列：ミッション行下〜動画ボタン上のスロット / top 301（351−50） */
+.home-hourglass-row {
+  position: absolute;
+  left: 344.2px;
+  top: 301px;
+  width: 678px; /* 4個分の見え幅（7個は横スクロール） */
+  height: 330px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.home-hourglass-track {
+  display: flex;
+  flex-direction: row;
+  gap: calc((678px - 4 * 110px) / 3);
+  width: max-content;
+  height: 330px;
+}
+.home-hourglass-track .hg {
+  width: 110px;
+  height: 330px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.home-hourglass-track .hg.filled {
+  opacity: 1;
+}
+.home-hourglass-track .hg.empty {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+/* Home ボタン共通（テキストは .point-text と同じ 48px・中央揃え） */
+.home-btn {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  font-size: 48px;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.home-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.home-btn-coin {
+  height: 85%;
+  max-height: 74px;
+  width: auto;
+  max-width: 104px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.home-btn-inline-icon {
+  height: 1em;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+/* (4) 動画を見て80＋豚チケット獲得 887.4×143.8 @ 105, 702 */
+.home-btn-video {
+  left: 105px;
+  top: 702px;
+  width: 887.4px;
+  height: 143.8px;
+  background: purple;
+  color: #fff;
+  border-radius: 12px;
+}
+
+/* (5) 15獲得 893.8×143.8 @ 99.7, 876 */
+.home-btn-15 {
+  left: 99.7px;
+  top: 876px;
+  width: 893.8px;
+  height: 143.8px;
+  background: #e0e0e0;
+  color: #333;
+  border-radius: 12px;
+}
+
+/* (6) 作業開始 円 364.8×364.8 @ 379.4, 1039 */
+.home-btn-start {
+  left: 379.4px;
+  top: 1039px;
+  width: 364.8px;
+  height: 364.8px;
+  border-radius: 50%;
+  background: lightblue;
+  font-size: 48px;
+}
+
+/* (7) 視聴でブースト 473.9×125.8 @ 613, 1414.6 */
+.home-btn-boost {
+  left: 613px;
+  top: 1414.6px;
+  width: 473.9px;
+  height: 125.8px;
+  background: #ffd700;
+  border: 1px solid #cc9900;
+  border-radius: 12px;
+  color: #333;
+}
+.home-btn-boost:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* フッター固定（23.svg・高さ120px・background + z-index: 1000） */
+.app-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  height: var(--footer-stack-height);
+  padding: 0 env(safe-area-inset-right, 0px) var(--safe-area-bottom) env(safe-area-inset-left, 0px);
+  overflow: hidden;
+  background: white;
+  z-index: var(--z-footer);
+  transform: translateY(var(--footer-visual-offset));
+}
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+  z-index: 2;
+  pointer-events: none;
+}
+.app-footer::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #fff;
+  z-index: 2;
+  pointer-events: none;
+}
+.app-footer-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.app-footer-nav {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  width: 25%;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  z-index: 1;
+}
+.app-footer-nav--active {
+  background: rgba(0, 0, 0, 0.07);
+}
+.app-footer-nav--active:focus-visible {
+  outline: 2px solid #333;
+  outline-offset: -2px;
+}
+.app-footer-nav-controller {
+  left: 0;
+}
+.app-footer-nav-home {
+  left: 25%;
+}
+.app-footer-nav-account {
+  left: 50%;
+}
+.app-footer-nav-calendar {
+  left: 75%;
+}
+/* フッター下 320×50 バナー用 */
+/* バナー：フッターの上に表示 */
+.app-banner-under-footer {
+  position: fixed;
+  left: 50%;
+  /* フッター translateY(27px) 後の上端にぴったり接する */
+  bottom: calc(var(--footer-stack-height) - var(--footer-visual-offset));
+  transform: translateX(-50%);
+  width: 320px;
+  height: var(--banner-under-footer-height);
+  max-width: 100%;
+  background: #e8e8e8;
+  z-index: 1001;
+  box-sizing: border-box;
+}
+.app-footer {
+  bottom: 0;
+}
+
+/* 獲得結果モーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal-base);
+  pointer-events: none;
+}
+
+.modal-overlay.modal-open,
+.modal-overlay.app-modal-open {
+  display: flex;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: block;
+}
+
+.modal-overlay--reward,
+.modal-overlay.modal-overlay--reward.app-modal-overlay {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.modal-content--reward,
+.modal-content.modal-content--reward.app-modal-content {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.reward-sheet {
+  width: 100%;
+  min-height: 420px;
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  padding: 24px 20px calc(env(safe-area-inset-bottom) + 16px);
+  box-sizing: border-box;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+@keyframes rewardSheetIn {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 獲得シートだけ「下から出現」させる（速さを抑える） */
+.modal-overlay.modal-open.modal-overlay--reward .reward-sheet {
+  animation: rewardSheetIn 0.5s ease-out both;
+}
+.modal-overlay.modal-open.modal-overlay--reward .reward-sheet.reward-sheet--stable {
+  animation: none;
+}
+.reward-sheet-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+}
+.reward-sheet-top--multi {
+  justify-content: space-evenly;
+  gap: 10px;
+}
+.reward-sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+.reward-sheet-icon-wrap {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.reward-sheet-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.reward-sheet-icon.reward-sheet-icon--points {
+  width: 58px;
+  height: 58px;
+  max-width: 58px;
+  max-height: 58px;
+  flex-shrink: 0;
+}
+.reward-sheet-amount {
+  font-size: 72px;
+  font-weight: bold;
+  line-height: 1;
+  color: #111;
+}
+.reward-sheet-item--icon {
+  flex-direction: column;
+  gap: 12px;
+}
+.reward-sheet-icon-wrap--icon {
+  width: 96px;
+  height: 96px;
+}
+.reward-sheet-icon.reward-sheet-icon--icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.reward-sheet-message {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  line-height: 1.4;
+}
+.reward-sheet-top--multi .reward-sheet-icon-wrap {
+  width: 64px;
+  height: 64px;
+}
+.reward-sheet-top--multi .reward-sheet-amount {
+  font-size: 44px;
+}
+.reward-sheet-top--icon-points {
+  align-items: flex-start;
+  justify-content: center;
+  gap: 20px;
+}
+.reward-sheet-top--icon-points .reward-sheet-item--icon .reward-sheet-icon-wrap--icon {
+  width: 80px;
+  height: 80px;
+}
+.reward-sheet-top--icon-points .reward-sheet-item:not(.reward-sheet-item--icon) {
+  padding-top: 8px;
+}
+.reward-sheet-top--icon-points .reward-sheet-message {
+  font-size: 14px;
+}
+.reward-sheet-banner {
+  width: min(100%, 300px);
+  height: 250px;
+  background: #e0dcdc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reward-sheet-close {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 18px;
+  background: #e0dcdc;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-title {
+  font-size: 20px;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+.modal-text {
+  font-size: 15px;
+  margin: 0 0 20px 0;
+  color: #555;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.modal-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+.modal-btn-yes {
+  background: #2e7d32;
+  color: #fff;
+}
+.modal-btn-no {
+  background: #e0e0e0;
+  color: #333;
+}
+.modal-message {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  color: #333;
+}
+
+.modal-close {
+  padding: 12px 24px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-start {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  font-size: 22px;
+  background: lightblue;
+  border: none;
+}
+
+/* ブースト */
+.btn-boost {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  background: #ffd700;
+  border: 1px solid #cc9900;
+}
+.btn-boost:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.boost-status {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #b8860b;
+  font-weight: bold;
+}
+
+/* 作業画面（縦向き・カメラプレビュー） */
+.work-screen.workRoot {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 100;
+}
+.work-screen .work-video,
+#work-camera {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  background: #111;
+  z-index: 0;
+  transform: none;
+  transform-origin: center center;
+}
+
+/* iOS: フロントカメラの左右ミラー（標準カメラのセルフィーと同様） */
+html.is-ios #work-camera.work-camera--user-mirror,
+body.is-ios #work-camera.work-camera--user-mirror {
+  transform: scaleX(-1);
+  transform-origin: center center;
+}
+
+/* 縦UIのまま物理横持ち: ミラー + 上下反転（rotate は使わない） */
+html.is-ios #work-camera.work-camera--phys-landscape,
+body.is-ios #work-camera.work-camera--phys-landscape {
+  transform: scaleX(-1) scaleY(-1);
+  transform-origin: center center;
+}
+
+/* HUD 主要要素は非回転（* 指定は landscapeHint の translateX を壊すため避ける） */
+body.is-ios .work-screen .workHUD .work-timer,
+body.is-ios .work-screen .workHUD .work-buttons,
+body.is-ios .work-screen .workHUD .work-buttons button,
+body.is-ios .work-screen .workHUD .boost-status,
+body.is-ios .work-screen .workHUD .camera-error,
+body.is-ios .work-screen .workHUD .dark-mode-toggle,
+body.is-ios .work-screen .workHUD .dark-mode-switch {
+  transform: none;
+}
+.work-screen .workHUD {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  pointer-events: none;
+}
+.work-screen .workHUD .work-buttons,
+.work-screen .workHUD .work-timer,
+.work-screen .workHUD .work-buttons *,
+.work-screen .workHUD .boost-status,
+.work-screen .workHUD .camera-error,
+.work-screen .workHUD .dark-mode-toggle {
+  pointer-events: auto;
+}
+/* 左下: タイマー / 右上: 暗幕 / 右側: ボタン縦並び */
+.work-screen .workHUD .work-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-left: auto;
+}
+.work-screen .workHUD .work-timer {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.work-screen .workHUD .dark-mode-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.work-screen .landscapeHint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin: 0;
+  pointer-events: auto;
+}
+.work-screen .camera-error {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  pointer-events: auto;
+}
+.work-screen .boost-status {
+  margin: 0 0 8px 0;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+/* タイマー：左下・白文字・見やすいサイズ */
+.work-screen .work-timer {
+  font-size: 48px;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+/* 暗幕ON時：HUDのタイマーは非表示（オーバーレイ側で中央表示） */
+.work-screen .workHUD.workHUD-dark .work-timer.work-timer-center {
+  visibility: hidden;
+}
+/* 10秒POP：画面中央 */
+.work-screen .work-pop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18px;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 10;
+  text-align: center;
+  line-height: 1.5;
+}
+.work-screen .work-pop-autopause {
+  max-width: 90%;
+  font-size: 16px;
+}
+/* 暗幕トグル：ラベル + スイッチ */
+.dark-mode-toggle .dark-mode-label {
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.dark-mode-switch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dark-mode-switch::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+.dark-mode-switch.is-on {
+  background: #00acc1;
+}
+.dark-mode-switch.is-on::after {
+  transform: translateX(20px);
+}
+/* 右側ボタン：水色・角丸 */
+.work-pause-btn,
+.work-end-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #00acc1;
+  color: #333;
+  cursor: pointer;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.work-end-btn {
+  background: #00acc1;
+  color: #333;
+}
+/* 終了確認モーダル */
+.end-confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  pointer-events: auto;
+}
+.end-confirm-modal-overlay[hidden],
+.end-confirm-modal-overlay.end-confirm-modal-overlay--closed {
+  display: none !important;
+  pointer-events: none !important;
+}
+.end-confirm-modal {
+  background: rgba(60, 60, 60, 0.95);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 260px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.end-confirm-title {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: #fff;
+  text-align: center;
+}
+.end-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.end-confirm-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+.end-confirm-btn-end {
+  background: #c62828;
+}
+.end-confirm-btn-cancel {
+  background: #757575;
+}
+
+/* 暗幕オーバーレイ（ビデオの上・HUDの下でタイマー中央表示） */
+.work-screen .dark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.work-screen .dark-overlay[hidden],
+.work-screen [data-work-dark-overlay][hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+.dark-overlay-timer {
+  font-size: 72px;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.dark-overlay-hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* 結果画面 */
+.result-screen {
+  max-width: 420px;
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+}
+.result-title {
+  font-size: 24px;
+  margin: 0 0 20px 0;
+}
+.result-time,
+.result-earned {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+}
+.result-time strong,
+.result-earned strong {
+  font-size: 22px;
+}
+.result-overflow-bonus {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  background: #f5f5f5;
+  border-radius: 12px;
+}
+.result-overflow-note {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #444;
+}
+.result-overflow-tickets {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #111;
+}
+.btn-back-home {
+  margin-top: 24px;
+  padding: 16px 32px;
+  font-size: 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: lightblue;
+  border: none;
+}
+
+/* カレンダー画面（ホームなどと同じく画面幅いっぱい） */
+.calendar-screen {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100dvh - var(--bottom-fixed-chrome));
+  padding: 16px 12px var(--home-scroll-padding-bottom);
+  background: #fff;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.calendar-nav-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+  border: none;
+  background: #80cbc4;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.calendar-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+.calendar-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.calendar-pig-wrap {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.calendar-pig {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.calendar-summary {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.calendar-worklog-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  background: #fff;
+  border: 1px solid #bdbdbd;
+  border-radius: 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.calendar-worklog-btn:active {
+  opacity: 0.85;
+}
+
+/* 作業ログ画面 */
+.worklog-screen {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100dvh - var(--bottom-fixed-chrome));
+  padding: 12px 12px var(--home-scroll-padding-bottom);
+  background: #fff;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.worklog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.worklog-back-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: #333;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.worklog-title {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+.worklog-header-spacer {
+  width: 40px;
+  flex-shrink: 0;
+}
+.worklog-status {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}
+.worklog-status--error {
+  color: #c62828;
+}
+.worklog-chart-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 30px;
+}
+.worklog-chart-nav {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.worklog-chart-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.worklog-chart-panel {
+  flex: 1;
+  min-width: 0;
+}
+.worklog-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.worklog-chart-grid {
+  stroke: #e8e8e8;
+  stroke-width: 1;
+}
+.worklog-chart-y-label {
+  font-size: 10px;
+  fill: #888;
+}
+.worklog-chart-bar {
+  fill: #9ad9f5;
+}
+.worklog-chart-x-label {
+  font-size: 10px;
+  fill: #333;
+}
+.worklog-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.worklog-stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #bdbdbd;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.worklog-stat-label {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+}
+.worklog-stat-value {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+  text-align: right;
+}
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+.calendar-wd-sun {
+  color: #c62828;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 20px;
+}
+.calendar-cell {
+  aspect-ratio: 1;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  color: #333;
+  position: relative;
+  padding: 4px;
+}
+.calendar-cell-empty {
+  background: #fafafa;
+  cursor: default;
+  border-color: #eee;
+  pointer-events: none;
+}
+.calendar-cell:not(.calendar-cell-empty):hover {
+  background: #e3f2fd;
+}
+.calendar-cell-selected {
+  background: #b2ebf2;
+  border-color: #00acc1;
+}
+.calendar-cell-star {
+  color: #f9a825;
+  font-size: 12px;
+  line-height: 1;
+}
+.calendar-cell-today {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c62828;
+}
+.calendar-detail {
+  margin-top: 12px;
+}
+.calendar-detail-card {
+  padding: 16px;
+  background: #b2ebf2;
+  border: 2px solid #006064;
+  border-radius: 12px;
+}
+.calendar-detail-date {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+.calendar-detail-time {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+  text-align: right;
+}
+.calendar-detail-diary {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+.calendar-detail-diary-label {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+.calendar-diary-notice {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #666;
+}
+.calendar-diary-notice-future {
+  color: #c62828;
+}
+.calendar-diary-add {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #006064;
+  background: #fff;
+  color: #006064;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.calendar-diary-text {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.calendar-diary-edit {
+  margin-top: 8px;
+}
+.calendar-diary-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #006064;
+  border-radius: 8px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.calendar-diary-count {
+  margin: 4px 0 8px 0;
+  font-size: 12px;
+  color: #666;
+}
+.calendar-diary-actions {
+  display: flex;
+  gap: 8px;
+}
+.calendar-diary-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+.calendar-diary-save {
+  background: #006064;
+  color: #fff;
+}
+.calendar-diary-cancel {
+  background: #757575;
+  color: #fff;
+}
+
+/* アカウント画面（縦スクロール・フッター固定） */
+.account-screen {
+  width: 100%;
+  min-width: 100%;
+  min-height: calc(100dvh - var(--footer-height));
+  padding: 24px 16px calc(var(--footer-height) + var(--ad-banner-fixed-height) - 76px);
+  background: #fff;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+.account-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.account-user-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #e6f8ff;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.account-user-icon-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.account-username {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+.account-userid {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  word-break: break-all;
+  text-align: center;
+  max-width: 100%;
+}
+/* アカウント：ニックネーム変更モーダル */
+.nickname-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal-nickname);
+  padding: 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.nickname-modal-overlay.app-modal-open,
+.nickname-modal-overlay.modal-open {
+  pointer-events: auto;
+}
+.nickname-modal {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+}
+.nickname-modal-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+.nickname-modal-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+.nickname-modal-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+.nickname-modal-input:focus {
+  outline: 2px solid #00acc1;
+  outline-offset: 1px;
+}
+.nickname-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.nickname-modal-btn {
+  padding: 10px 18px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  min-width: 96px;
+}
+.nickname-modal-btn-primary {
+  background: #00acc1;
+  color: #fff;
+}
+.nickname-modal-btn-secondary {
+  background: #eee;
+  color: #333;
+  border: 1px solid #ccc;
+}
+/* アカウント：アイコン選択モーダル */
+.icon-picker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal-icon);
+  padding: 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.icon-picker-modal-overlay.app-modal-open,
+.icon-picker-modal-overlay.modal-open {
+  pointer-events: auto;
+}
+.icon-picker-modal {
+  width: 100%;
+  max-width: 360px;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+}
+.icon-picker-modal-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+.icon-picker-status {
+  margin: 0 0 16px 0;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.icon-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fafafa;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-picker-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.icon-picker-item--selected {
+  border-color: #00acc1;
+  background: #e0f7fa;
+  box-shadow: 0 0 0 1px #00acc1;
+}
+.icon-picker-item-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+.icon-picker-item-name {
+  font-size: 11px;
+  color: #444;
+  text-align: center;
+  line-height: 1.2;
+  pointer-events: none;
+}
+.icon-picker-item-name--split {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.icon-picker-item-name-base {
+  line-height: 1.2;
+}
+.icon-picker-item-name-stars {
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+.icon-picker-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+.icon-picker-modal-btn {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  min-width: 120px;
+}
+.icon-picker-modal-btn-secondary {
+  background: #eee;
+  color: #333;
+  border: 1px solid #ccc;
+}
+/* 240.svg そのものをタップ領域に（game-garapon と同寸: 337×112 @375） */
+.account-referral-open {
+  display: block;
+  width: calc(100vw * 337 / 375);
+  max-width: 100%;
+  height: calc(100vw * 112 / 375);
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 14px;
+  line-height: 0;
+  box-sizing: border-box;
+}
+.account-referral-open:active {
+  opacity: 0.92;
+  transform: scale(0.995);
+}
+.account-referral-open-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+/* 友達招待：画面中央モーダル */
+.referral-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-referral);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.referral-modal-overlay.app-modal-open,
+.referral-modal-overlay.modal-open {
+  pointer-events: auto;
+}
+.referral-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+}
+.referral-modal-dialog .account-referral {
+  border: none;
+  padding: 0;
+}
+.referral-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 24px;
+  line-height: 1;
+  color: #333;
+  cursor: pointer;
+  z-index: 1;
+}
+.referral-modal-title {
+  margin: 0 0 12px 0;
+  padding-right: 36px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+}
+.account-referral {
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #bdbdbd;
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+}
+.account-referral-label {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+}
+.account-referral-code {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  color: #111;
+  text-align: center;
+}
+.account-referral-hint {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+}
+.account-referral-applied {
+  margin: 12px 0 0 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #006064;
+  text-align: center;
+}
+.account-referral-input-label {
+  display: block;
+  margin: 16px 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+.account-referral-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin: 16px 0 12px;
+  text-transform: uppercase;
+}
+.account-referral-applied + .account-referral-input {
+  margin-top: 8px;
+}
+.account-referral-input:disabled {
+  background: #f5f5f5;
+  color: #888;
+}
+.account-referral-apply {
+  width: 100%;
+}
+.account-buttons {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+.account-exchange-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #000;
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.account-exchange-points {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.account-coin {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.account-points {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  min-width: 0;
+}
+.account-points.account-points--many-digits {
+  font-size: 18px;
+}
+.account-points.account-points--more-digits {
+  font-size: 14px;
+}
+.account-btn-exchange {
+  width: 140px;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #00acc1;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.account-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  text-align: center;
+  border: 1px solid #000;
+  border-radius: 12px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+button.account-btn.account-btn-exchange {
+  width: 140px;
+}
+/* 広告プレースホルダー（将来 AdMob 等を差し替え用に構造化） */
+
+.ad-banner-home-fixed {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--footer-stack-height) - var(--footer-visual-offset));
+  transform: translateX(-50%);
+  width: 320px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e0e0;
+  z-index: 999;
+  box-sizing: border-box;
+}
+/* 広告〜利用規約のあいだで友達招待を縦中央に */
+.account-referral-between {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+.ad-banner-account-inline {
+  width: 300px;
+  height: 250px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.ad-banner-account-fixed {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--footer-stack-height) - var(--footer-visual-offset));
+  transform: translateX(-50%);
+  width: 320px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e0e0;
+  z-index: 999;
+  box-sizing: border-box;
+}
+.ad-banner-dummy {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
+  margin: 0;
+}
+
+/* トースト */
+.toast {
+  position: fixed;
+  bottom: calc(var(--bottom-fixed-chrome) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 12px 24px;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 16px;
+  z-index: var(--z-toast);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.toast.toast-visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

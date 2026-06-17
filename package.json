@@ -1,0 +1,19 @@
+{
+  "name": "study-point-mvp2",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:tunnel": "VITE_TUNNEL=1 vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.0",
+    "@tensorflow/tfjs": "^4.22.0"
+  }
+}
