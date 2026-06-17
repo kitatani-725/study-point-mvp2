@@ -2,6 +2,16 @@ import './style.css'
 import { supabase } from './lib/supabase'
 import { checkWorkToolPresence, hasAnyAllowedWorkTool } from './lib/workToolCheck.js'
 
+/** iPhone Safari 等のピンチ拡大を抑止（viewport と併用） */
+function installViewportZoomGuard() {
+  const blockGesture = (e) => e.preventDefault()
+  const opts = { passive: false }
+  document.addEventListener('gesturestart', blockGesture, opts)
+  document.addEventListener('gesturechange', blockGesture, opts)
+  document.addEventListener('gestureend', blockGesture, opts)
+}
+installViewportZoomGuard()
+
 // --- user_id（匿名ユーザー識別子） ---
 // 初回起動時のみ生成し、localStorage の `user_id` に保存して使い回す
 const USER_ID_STORAGE_KEY = 'user_id'
@@ -4267,12 +4277,12 @@ function getViewportScale() {
   return window.innerWidth / BASE_WIDTH
 }
 
-/** Home の 1080×1920 コンテナをスマホ幅に合わせてスケール（幅基準で画面いっぱいに表示） */
+/** Home の 1080×1790 コンテナをスマホ幅に合わせてスケール（幅基準で画面いっぱいに表示） */
 function applyHomeScale() {
   const container = document.querySelector('.home-container')
   const wrapper = document.querySelector('.home-scale-wrapper')
   if (!container) return
-  const baseHeight = 1920
+  const baseHeight = 1790
   const scale = getViewportScale()
   container.style.transform = `scale(${scale})`
   if (wrapper) {
@@ -5395,8 +5405,30 @@ function syncBodyScrollLock() {
   document.documentElement.classList.toggle('app-scroll-locked', locked)
 }
 
+const SCREEN_CHROME_BG = {
+  home: '#ffffff',
+  game: '#ffffff',
+  garapon: '#ffffff',
+  account: '#ffffff',
+  calendar: '#ffffff',
+  worklog: '#ffffff',
+  work: '#111111',
+  result: '#f2f2f2',
+}
+
+/** 画面ごとに html / safe-area / theme-color の背景を各画面本体と揃える */
+function syncScreenChromeBg(screen = state.screen) {
+  const key = screen || 'home'
+  const bg = SCREEN_CHROME_BG[key] ?? SCREEN_CHROME_BG.home
+  document.documentElement.dataset.screen = key
+  document.documentElement.style.setProperty('--screen-chrome-bg', bg)
+  const themeMeta = document.querySelector('meta[name="theme-color"]')
+  if (themeMeta) themeMeta.setAttribute('content', bg)
+}
+
 function syncChromeBodyClasses() {
   syncPlatformBodyClasses()
+  syncScreenChromeBg()
   document.body.classList.toggle('garapon-screen-active', state.screen === 'garapon')
   document.body.classList.toggle('work-screen-active', state.screen === 'work')
   const banner = document.querySelector('.app-banner-under-footer')
@@ -6885,7 +6917,7 @@ function render(options = {}) {
     return
   }
 
-  // screen === 'home' — 1080×1920 基準・絶対配置
+  // screen === 'home' — 1080×1790 基準・絶対配置
   if (screen === 'home') {
     state.lastLoginDate = getTodayKey()
     localStorage.setItem(STORAGE_KEYS.missionLastLogin, state.lastLoginDate)
@@ -8661,6 +8693,7 @@ const addPoints = async (amount, rewardType = 'manual_adjust', note = '', option
 }
 
 // --- 初回起動（非同期 IIFE）: Layer 0 完了後にホーム初回 render、以降は background boot ---
+syncScreenChromeBg(state.screen)
 ;(async () => {
   try {
     localStorage.removeItem(STORAGE_KEYS.points)

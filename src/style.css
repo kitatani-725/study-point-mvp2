@@ -13,6 +13,11 @@
     var(--footer-stack-height) - var(--footer-visual-offset) + var(--banner-under-footer-height)
   );
   --home-scroll-padding-bottom: calc(var(--bottom-fixed-chrome) + 12px);
+  /* 画面背景（ステータスバー / safe-area 含む外枠と各画面本体で共通） */
+  --app-bg-home: #f2f2f2;
+  --app-bg-surface: #ffffff;
+  --app-bg-work: #111111;
+  --screen-chrome-bg: var(--app-bg-surface);
   /* 重なり順（footer < modal < toast） */
   --z-footer: 1000;
   --z-banner-under-footer: 1001;
@@ -26,8 +31,30 @@
   --z-toast: 3100;
 }
 
+html[data-screen='home'] {
+  --screen-chrome-bg: var(--app-bg-surface);
+}
+html[data-screen='result'] {
+  --screen-chrome-bg: var(--app-bg-home);
+}
+html[data-screen='game'],
+html[data-screen='garapon'],
+html[data-screen='account'],
+html[data-screen='calendar'],
+html[data-screen='worklog'] {
+  --screen-chrome-bg: var(--app-bg-surface);
+}
+html[data-screen='work'] {
+  --screen-chrome-bg: var(--app-bg-work);
+}
+
 html {
   -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: var(--screen-chrome-bg);
 }
 
 /* 独自モーダル表示中は背面スクロールを止める（iOS Safari 含む） */
@@ -56,12 +83,32 @@ html.app-scroll-locked .garapon-viewport {
 
 body {
   margin: 0;
+  padding: 0;
   font-family: sans-serif;
   display: flex;
   justify-content: center;
-  background: #f2f2f2;
+  background-color: var(--screen-chrome-bg);
   overflow-x: hidden;
   min-height: 100dvh;
+  touch-action: manipulation;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background-color: var(--screen-chrome-bg);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+#app {
+  width: 100%;
+  flex: 1 1 100%;
+  min-width: 0;
+  background-color: var(--screen-chrome-bg);
 }
 
 #app:has(.result-screen),
@@ -106,7 +153,7 @@ body.garapon-screen-active .app-banner-under-footer {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: #fff;
+  background-color: var(--app-bg-surface);
 }
 .game-scale-wrapper {
   overflow: hidden;
@@ -377,7 +424,7 @@ body.garapon-screen-active .app-banner-under-footer {
   width: 100%;
   min-height: calc(100dvh - var(--footer-height));
   box-sizing: border-box;
-  background: #fff;
+  background-color: var(--app-bg-surface);
   overflow-x: hidden;
 }
 .garapon-viewport {
@@ -392,6 +439,7 @@ body.garapon-screen-active .app-banner-under-footer {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
+  background-color: var(--app-bg-surface);
 }
 .garapon-scale-wrapper--garapon {
   overflow: visible;
@@ -832,7 +880,7 @@ body.garapon-screen-active .app-banner-under-footer {
   border-color: #d97706;
 }
 
-/* Home: 1080×1920 デザインコンテナ（scale は JS で適用・スマホ幅基準） */
+/* Home: 1080×1790 デザインコンテナ（scale は JS で適用・スマホ幅基準） */
 .home-viewport {
   width: 100%;
   min-height: calc(100dvh - var(--footer-stack-height));
@@ -844,6 +892,7 @@ body.garapon-screen-active .app-banner-under-footer {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  background-color: var(--app-bg-surface);
 }
 
 .home-scale-wrapper {
@@ -854,7 +903,7 @@ body.garapon-screen-active .app-banner-under-footer {
 .home-container {
   position: relative;
   width: 1080px;
-  height: 1920px;
+  height: 1790px;
   transform-origin: top left;
 }
 
@@ -1441,11 +1490,12 @@ body.garapon-screen-active .app-banner-under-footer {
   border: none;
   background: transparent;
   z-index: 1;
+  -webkit-tap-highlight-color: transparent;
 }
-.app-footer-nav--active {
-  background: rgba(0, 0, 0, 0.07);
+.app-footer-nav:active {
+  background: transparent;
 }
-.app-footer-nav--active:focus-visible {
+.app-footer-nav:focus-visible {
   outline: 2px solid #333;
   outline-offset: -2px;
 }
@@ -1752,6 +1802,7 @@ body.garapon-screen-active .app-banner-under-footer {
   height: 100%;
   overflow: hidden;
   z-index: 100;
+  touch-action: none;
 }
 .work-screen .work-video,
 #work-camera {
@@ -2024,10 +2075,14 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 
 /* 結果画面 */
 .result-screen {
+  width: 100%;
   max-width: 420px;
   margin: auto;
+  min-height: calc(100dvh - var(--footer-height));
   padding: 24px;
   text-align: center;
+  box-sizing: border-box;
+  background-color: var(--app-bg-home);
 }
 .result-title {
   font-size: 24px;
@@ -2076,7 +2131,7 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   max-width: 100%;
   min-height: calc(100dvh - var(--bottom-fixed-chrome));
   padding: 16px 12px var(--home-scroll-padding-bottom);
-  background: #fff;
+  background-color: var(--app-bg-surface);
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -2152,7 +2207,7 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   max-width: 100%;
   min-height: calc(100dvh - var(--bottom-fixed-chrome));
   padding: 12px 12px var(--home-scroll-padding-bottom);
-  background: #fff;
+  background-color: var(--app-bg-surface);
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -2438,7 +2493,7 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   min-width: 100%;
   min-height: calc(100dvh - var(--footer-height));
   padding: 24px 16px calc(var(--footer-height) + var(--ad-banner-fixed-height) - 76px);
-  background: #fff;
+  background-color: var(--app-bg-surface);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
