@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Capacitor / native build artifacts（ios・android フォルダ自体はコミット可）
+ios/App/build/
+ios/DerivedData/
+ios/capacitor-cordova-ios-plugins-sources/
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/

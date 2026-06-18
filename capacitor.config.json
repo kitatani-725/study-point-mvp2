@@ -1,0 +1,15 @@
+{
+  "appId": "com.wakupork.studypoint",
+  "appName": "ワクポク",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "allowsLinkPreview": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -5,6 +5,11 @@ import { defineConfig } from 'vite'
 const tunnelDev = process.env.VITE_TUNNEL === '1' || process.env.VITE_TUNNEL === 'true'
 
 export default defineConfig({
+  // Capacitor の webDir（capacitor.config.json）と一致。既定の outDir は dist
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
   server: {
     // LAN / Cloudflare Tunnel から実機アクセス用
     host: true,

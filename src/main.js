@@ -1,5 +1,11 @@
 import './style.css'
 import { supabase } from './lib/supabase'
+import { AD_PLACEMENTS, logAdConfigInDev } from './lib/adConfig.js'
+import {
+  logBannerPlacementsInDev,
+  preloadHomeBannerAd,
+  schedulePangleBannerRefresh,
+} from './lib/pangleBanner.js'
 import { checkWorkToolPresence, hasAnyAllowedWorkTool } from './lib/workToolCheck.js'
 
 /** iPhone Safari 等のピンチ拡大を抑止（viewport と併用） */
@@ -645,11 +651,8 @@ function showInterstitialAfterRouletteEvery3Spins() {
   console.log('[ad:interstitial] roulette_every_3_spins')
 }
 
-function preloadHomeBannerAd() {
-  console.log('[ad:banner] home_under_footer load start')
-  const banner = document.querySelector('.app-banner-under-footer')
-  if (banner) banner.dataset.adState = 'loaded'
-  console.log('[ad:banner] home_under_footer load complete dummy')
+function preloadHomeBannerAdTask() {
+  return preloadHomeBannerAd()
 }
 
 function preloadRewardedAds() {
@@ -723,7 +726,7 @@ async function loadMissionProgressLight() {
 async function runBootLayer1() {
   console.log('[boot] layer1 start', { totalMs: bootMsSinceStart() })
   const layerStarted = performance.now()
-  await runBootTask('homeBannerAd', preloadHomeBannerAd)
+  await runBootTask('homeBannerAd', preloadHomeBannerAdTask)
   await runBootTask('missionProgressLight', loadMissionProgressLight)
   console.log('[boot] layer1 end', {
     ms: Math.round(performance.now() - layerStarted),
@@ -1546,7 +1549,7 @@ function buildRewardModalOverlayHtml(
       <div class="modal-content modal-content--reward app-modal-content">
         <div class="reward-sheet${rewardSheetEntryClass()}">
           ${buildRewardSheetTopHtml(rewardPopup)}
-          <div class="reward-sheet-banner" role="img" aria-label="広告エリア">
+          <div class="reward-sheet-banner" data-ad-placement="${AD_PLACEMENTS.BANNER_REWARD_MODAL}" role="img" aria-label="広告エリア">
             <span class="ad-banner-dummy">300x250 banner</span>
           </div>
           <button class="reward-sheet-close" type="button" ${closeBtnAttrs}>閉じる</button>
@@ -4547,6 +4550,7 @@ function patchGaraponScreen() {
   cleanupOrphanOverlays()
   syncBodyScrollLock()
   applyGaraponScale()
+  schedulePangleBannerRefresh()
 }
 
 function bindGaraponAppDelegationOnce() {
@@ -4920,6 +4924,7 @@ function patchGameScreen() {
   cleanupOrphanOverlays()
   syncBodyScrollLock()
   applyGameScale()
+  schedulePangleBannerRefresh()
 }
 
 function bindGameAppDelegationOnce() {
@@ -5634,7 +5639,7 @@ function buildHomeModalInnerHtml() {
     return `
         <div class="reward-sheet${rewardSheetEntryClass()}">
         ${buildRewardSheetTopHtml(state.rewardPopup)}
-          <div class="reward-sheet-banner" role="img" aria-label="広告エリア">
+          <div class="reward-sheet-banner" data-ad-placement="${AD_PLACEMENTS.BANNER_REWARD_MODAL}" role="img" aria-label="広告エリア">
             <span class="ad-banner-dummy">300x250 banner</span>
           </div>
           <button class="reward-sheet-close" type="button" data-modal-close data-modal-action="close" data-modal-type="reward">閉じる</button>
@@ -6087,6 +6092,7 @@ function patchAccountScreen() {
   patchLoadingUI(['applyCode', 'saveNickname', 'saveIcon', 'exchange'])
   cleanupOrphanOverlays()
   syncBodyScrollLock()
+  schedulePangleBannerRefresh()
 }
 
 function bindAccountAppDelegationOnce() {
@@ -6209,6 +6215,7 @@ function patchHomeScreen() {
   cleanupOrphanOverlays()
   syncBodyScrollLock()
   applyHomeScale()
+  schedulePangleBannerRefresh()
 }
 
 function shouldPatchHomeScreen(forceFull) {
@@ -6531,7 +6538,7 @@ function render(options = {}) {
         <button type="button" class="account-btn" data-account-action="open-username-modal">ニックネーム変更</button>
         <button type="button" class="account-btn" data-account-action="open-icon-modal">アイコン変更</button>
         <div class="account-referral-between">
-        <div class="ad-banner-account-inline" role="img" aria-label="広告エリア">
+        <div class="ad-banner-account-inline" data-ad-placement="${AD_PLACEMENTS.BANNER_ACCOUNT}" role="img" aria-label="広告エリア">
           <span class="ad-banner-dummy">Account Banner 300x250</span>
         </div>
         <button
@@ -6567,6 +6574,7 @@ function render(options = {}) {
         })
       }
     }
+    schedulePangleBannerRefresh()
     return
   }
 
@@ -6820,7 +6828,7 @@ function render(options = {}) {
                 <img src="/assets/31.svg" alt="" class="garapon-balance-icon" width="24" height="24" decoding="async" />
                 <span data-garapon-tickets>×${pigTickets}</span>
               </div>
-              <div class="garapon-ad-banner-slot" role="img" aria-label="広告バナー予定地 300×250">
+              <div class="garapon-ad-banner-slot" data-ad-placement="${AD_PLACEMENTS.BANNER_ROULETTE}" role="img" aria-label="広告バナー予定地 300×250">
                 <span class="ad-banner-dummy">300×250 banner</span>
               </div>
             </div>
@@ -6879,7 +6887,7 @@ function render(options = {}) {
             ${secondaryButtons}
           </div>
 
-          <div class="game-ad-banner-slot" role="img" aria-label="広告バナー予定地 300×250">
+          <div class="game-ad-banner-slot" data-ad-placement="${AD_PLACEMENTS.BANNER_GAME}" role="img" aria-label="広告バナー予定地 300×250">
             <span class="ad-banner-dummy">300×250 banner</span>
           </div>
 
@@ -6914,6 +6922,7 @@ function render(options = {}) {
       if (top != null) el.style.top = `${top}px`
     })
     patchGameRewardOverlay()
+    schedulePangleBannerRefresh()
     return
   }
 
@@ -7016,7 +7025,7 @@ function render(options = {}) {
       ` : state.rewardPopup ? `
         <div class="reward-sheet${rewardSheetEntryClass()}">
         ${buildRewardSheetTopHtml(state.rewardPopup)}
-          <div class="reward-sheet-banner" role="img" aria-label="広告エリア">
+          <div class="reward-sheet-banner" data-ad-placement="${AD_PLACEMENTS.BANNER_REWARD_MODAL}" role="img" aria-label="広告エリア">
             <span class="ad-banner-dummy">300x250 banner</span>
           </div>
           <button class="reward-sheet-close" type="button" data-modal-close data-modal-action="close" data-modal-type="reward">閉じる</button>
@@ -7052,6 +7061,7 @@ function render(options = {}) {
   bindHomeAppDelegationOnce()
   applyHomeScale()
   applyMissionPanelScale()
+  schedulePangleBannerRefresh()
   } finally {
     syncBodyScrollLock()
     cleanupOrphanOverlays()
@@ -7639,6 +7649,8 @@ document.querySelector('[data-nav="calendar"]')?.addEventListener('click', () =>
 
 console.log('[boot] start', { ms: 0 })
 syncPlatformBodyClasses()
+logAdConfigInDev()
+logBannerPlacementsInDev()
 loadState()
 state.userId = getUserId()
 console.log('[init] userId confirmed', { userId: state.userId })
