@@ -6,6 +6,9 @@
   /* フッター translateY と合わせたデザイン上のオフセット */
   --footer-visual-offset: 27px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
   /* 固定フッター実高さ（iPhone のホームインジケータ分を含む） */
   --footer-stack-height: calc(var(--footer-height) + var(--safe-area-bottom));
   /* フッター（translateY 後の見え方）+ 直上の 320×50 バナー */
@@ -53,7 +56,7 @@ html {
   touch-action: manipulation;
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  height: 100%;
   background-color: var(--screen-chrome-bg);
 }
 
@@ -86,10 +89,12 @@ body {
   padding: 0;
   font-family: sans-serif;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%;
+  min-height: 100%;
   background-color: var(--screen-chrome-bg);
-  overflow-x: hidden;
-  min-height: 100dvh;
+  overflow: hidden;
   touch-action: manipulation;
 }
 body::before {
@@ -98,7 +103,7 @@ body::before {
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top, 0px);
+  height: var(--safe-area-top);
   background-color: var(--screen-chrome-bg);
   z-index: 9999;
   pointer-events: none;
@@ -106,25 +111,65 @@ body::before {
 
 #app {
   width: 100%;
-  flex: 1 1 100%;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100dvh;
   background-color: var(--screen-chrome-bg);
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-#app:has(.result-screen),
+/* 各画面のスクロール領域（safe-area 上部・固定フッター分の下部余白は各画面で設定） */
+.home-viewport,
+.game-viewport,
+.garapon-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: var(--safe-area-top);
+}
+
+.account-screen,
+.calendar-screen,
+.worklog-screen,
+.result-screen {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.garapon-screen {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  background-color: var(--app-bg-surface);
+}
+
+#app:has(.calendar-screen),
+#app:has(.worklog-screen),
 #app:has(.account-screen),
-#app:has(.game-screen),
 #app:has(.game-viewport),
 #app:has(.garapon-screen) {
-  padding-bottom: var(--footer-height);
-}
-#app:has(.calendar-screen),
-#app:has(.worklog-screen) {
   width: 100%;
   max-width: 100%;
-  flex: 1 1 100%;
+  flex: 1 1 auto;
   min-width: 0;
-  padding-bottom: var(--home-scroll-padding-bottom);
 }
 /* 作業画面ではフッター・バナーを非表示 */
 body.work-screen-active .app-footer,
@@ -134,25 +179,12 @@ body.work-screen-active .app-banner-under-footer {
 body.garapon-screen-active .app-banner-under-footer {
   display: none !important;
 }
-#app:has(.account-screen),
-#app:has(.game-viewport),
-#app:has(.garapon-screen) {
-  width: 100%;
-  max-width: 100%;
-  flex: 1 1 100%;
-  min-width: 0;
-}
 /* --- ゲーム画面（375×667 基準の絶対配置 + 幅基準スケール） --- */
 .game-viewport {
-  width: 100%;
-  min-height: calc(100dvh - var(--footer-height));
-  padding-bottom: var(--footer-height);
+  padding-bottom: var(--bottom-fixed-chrome);
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   background-color: var(--app-bg-surface);
 }
 .game-scale-wrapper {
@@ -420,25 +452,11 @@ body.garapon-screen-active .app-banner-under-footer {
 }
 
 /* --- 豚ガラポン画面（375×724：バナーは所持チケットピル直下、幅基準スケール） --- */
-.garapon-screen {
-  width: 100%;
-  min-height: calc(100dvh - var(--footer-height));
-  box-sizing: border-box;
-  background-color: var(--app-bg-surface);
-  overflow-x: hidden;
-}
 .garapon-viewport {
-  width: 100%;
-  min-height: calc(100dvh - var(--footer-height));
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: var(--footer-height);
+  padding-bottom: var(--footer-stack-height);
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  box-sizing: border-box;
   background-color: var(--app-bg-surface);
 }
 .garapon-scale-wrapper--garapon {
@@ -882,16 +900,10 @@ body.garapon-screen-active .app-banner-under-footer {
 
 /* Home: 1080×1790 デザインコンテナ（scale は JS で適用・スマホ幅基準） */
 .home-viewport {
-  width: 100%;
-  min-height: calc(100dvh - var(--footer-stack-height));
   padding-bottom: var(--home-scroll-padding-bottom);
-  box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   background-color: var(--app-bg-surface);
 }
 
@@ -1449,7 +1461,8 @@ body.garapon-screen-active .app-banner-under-footer {
   overflow: hidden;
   background: white;
   z-index: var(--z-footer);
-  transform: translateY(var(--footer-visual-offset));
+  transform: translateY(var(--footer-visual-offset)) translateZ(0);
+  -webkit-transform: translateY(var(--footer-visual-offset)) translateZ(0);
 }
 .app-footer::before {
   content: '';
@@ -1518,16 +1531,14 @@ body.garapon-screen-active .app-banner-under-footer {
   left: 50%;
   /* フッター translateY(27px) 後の上端にぴったり接する */
   bottom: calc(var(--footer-stack-height) - var(--footer-visual-offset));
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateZ(0);
+  -webkit-transform: translateX(-50%) translateZ(0);
   width: 320px;
   height: var(--banner-under-footer-height);
   max-width: 100%;
   background: #e8e8e8;
   z-index: 1001;
   box-sizing: border-box;
-}
-.app-footer {
-  bottom: 0;
 }
 
 /* 獲得結果モーダル */
@@ -1846,11 +1857,8 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 16px;
   pointer-events: none;
+  padding: 0;
 }
 .work-screen .workHUD .work-buttons,
 .work-screen .workHUD .work-timer,
@@ -1860,26 +1868,70 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 .work-screen .workHUD .dark-mode-toggle {
   pointer-events: auto;
 }
-/* 左下: タイマー / 右上: 暗幕 / 右側: ボタン縦並び */
-.work-screen .workHUD .work-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  margin-left: auto;
+.work-screen .workHUD .boost-status {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  margin: 0;
+  max-width: calc(100% - 120px);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
+.work-screen .workHUD .camera-error {
+  position: absolute;
+  top: max(44px, calc(env(safe-area-inset-top, 0px) + 32px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  right: auto;
+  max-width: min(320px, calc(100% - 24px));
+  margin: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+/* タイマー：左下（撮影中心を避ける） */
 .work-screen .workHUD .work-timer {
-  align-self: flex-start;
-  margin-top: auto;
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  font-size: 48px;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  color: #fff;
 }
+/* 暗幕トグル：右上 */
 .work-screen .workHUD .dark-mode-toggle {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
+}
+/* 操作ボタン：右下に横並び（縦持ち・撮影中心を避ける） */
+.work-screen .workHUD .work-buttons {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+}
+/* 物理横持ち：右端に縦並び（手元・机の中央を確保） */
+.work-screen:has(#work-camera.work-camera--phys-landscape) .workHUD .work-buttons {
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  flex-direction: column;
+  align-items: stretch;
 }
 .work-screen .landscapeHint {
   position: absolute;
@@ -1893,28 +1945,6 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   font-size: 14px;
   margin: 0;
   pointer-events: auto;
-}
-.work-screen .camera-error {
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  margin: 0 0 8px 0;
-  pointer-events: auto;
-}
-.work-screen .boost-status {
-  margin: 0 0 8px 0;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-/* タイマー：左下・白文字・見やすいサイズ */
-.work-screen .work-timer {
-  font-size: 48px;
-  font-variant-numeric: tabular-nums;
-  font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  color: #fff;
 }
 /* 暗幕ON時：HUDのタイマーは非表示（オーバーレイ側で中央表示） */
 .work-screen .workHUD.workHUD-dark .work-timer.work-timer-center {
@@ -1976,18 +2006,20 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 .dark-mode-switch.is-on::after {
   transform: translateX(20px);
 }
-/* 右側ボタン：水色・角丸 */
+/* 右側ボタン：水色・角丸・押しやすいサイズ */
 .work-pause-btn,
 .work-end-btn {
-  padding: 12px 24px;
+  padding: 12px 20px;
   font-size: 16px;
   border-radius: 8px;
   border: none;
   background: #00acc1;
   color: #333;
   cursor: pointer;
-  min-width: 120px;
+  min-width: 104px;
+  min-height: 44px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
 }
 .work-end-btn {
   background: #00acc1;
@@ -2065,21 +2097,22 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   font-variant-numeric: tabular-nums;
   font-weight: bold;
   color: #fff;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .dark-overlay-hint {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
+  padding: 0 16px max(20px, env(safe-area-inset-bottom, 0px));
+  text-align: center;
 }
 
 /* 結果画面 */
 .result-screen {
   width: 100%;
   max-width: 420px;
-  margin: auto;
-  min-height: calc(100dvh - var(--footer-height));
-  padding: 24px;
+  margin: 0 auto;
+  padding: calc(var(--safe-area-top) + 24px) 24px var(--footer-stack-height);
   text-align: center;
   box-sizing: border-box;
   background-color: var(--app-bg-home);
@@ -2129,10 +2162,8 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 .calendar-screen {
   width: 100%;
   max-width: 100%;
-  min-height: calc(100dvh - var(--bottom-fixed-chrome));
-  padding: 16px 12px var(--home-scroll-padding-bottom);
+  padding: calc(var(--safe-area-top) + 16px) 12px var(--home-scroll-padding-bottom);
   background-color: var(--app-bg-surface);
-  overflow-y: auto;
   box-sizing: border-box;
 }
 .calendar-header {
@@ -2205,10 +2236,8 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 .worklog-screen {
   width: 100%;
   max-width: 100%;
-  min-height: calc(100dvh - var(--bottom-fixed-chrome));
-  padding: 12px 12px var(--home-scroll-padding-bottom);
+  padding: calc(var(--safe-area-top) + 12px) 12px var(--home-scroll-padding-bottom);
   background-color: var(--app-bg-surface);
-  overflow-y: auto;
   box-sizing: border-box;
 }
 .worklog-header {
@@ -2491,11 +2520,8 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 .account-screen {
   width: 100%;
   min-width: 100%;
-  min-height: calc(100dvh - var(--footer-height));
-  padding: 24px 16px calc(var(--footer-height) + var(--ad-banner-fixed-height) - 76px);
+  padding: calc(var(--safe-area-top) + 24px) 16px var(--home-scroll-padding-bottom);
   background-color: var(--app-bg-surface);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
 }
 .account-header {
