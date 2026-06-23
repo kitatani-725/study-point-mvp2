@@ -1870,7 +1870,7 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
 }
 .work-screen .workHUD .boost-status {
   position: absolute;
-  top: max(12px, env(safe-area-inset-top, 0px));
+  top: max(68px, calc(env(safe-area-inset-top, 0px) + 56px));
   left: max(12px, env(safe-area-inset-left, 0px));
   margin: 0;
   max-width: calc(100% - 120px);
@@ -1890,11 +1890,12 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   border-radius: 12px;
   font-size: 14px;
 }
-/* タイマー：左下（撮影中心を避ける） */
+/* タイマー：左上（横持ち想定・中央の撮影エリアを空ける） */
 .work-screen .workHUD .work-timer {
   position: absolute;
+  top: max(16px, env(safe-area-inset-top, 0px));
   left: max(16px, env(safe-area-inset-left, 0px));
-  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  bottom: auto;
   margin: 0;
   font-size: 48px;
   font-variant-numeric: tabular-nums;
@@ -1912,26 +1913,18 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   align-items: flex-end;
   gap: 6px;
 }
-/* 操作ボタン：右下に横並び（縦持ち・撮影中心を避ける） */
+/* 操作ボタン：左下に横並び（横持ち想定・手元エリアを避ける） */
 .work-screen .workHUD .work-buttons {
   position: absolute;
-  right: max(12px, env(safe-area-inset-right, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
   bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  right: auto;
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 10px;
   margin: 0;
-}
-/* 物理横持ち：右端に縦並び（手元・机の中央を確保） */
-.work-screen:has(#work-camera.work-camera--phys-landscape) .workHUD .work-buttons {
-  top: 0;
-  bottom: 0;
-  margin-top: auto;
-  margin-bottom: auto;
-  flex-direction: column;
-  align-items: stretch;
 }
 .work-screen .landscapeHint {
   position: absolute;
@@ -1982,7 +1975,7 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   height: 28px;
   border-radius: 14px;
   border: none;
-  background: rgba(255, 255, 255, 0.4);
+  background: #5da2bd;
   cursor: pointer;
   position: relative;
   transition: background 0.2s;
@@ -2001,29 +1994,29 @@ body.is-ios .work-screen .workHUD .dark-mode-switch {
   transition: transform 0.2s;
 }
 .dark-mode-switch.is-on {
-  background: #00acc1;
+  background: #5da2bd;
 }
 .dark-mode-switch.is-on::after {
   transform: translateX(20px);
 }
-/* 右側ボタン：水色・角丸・押しやすいサイズ */
+/* 操作ボタン：水色・角丸・押しやすいサイズ（モックアップ準拠の縦長カプセル） */
 .work-pause-btn,
 .work-end-btn {
-  padding: 12px 20px;
+  padding: 16px 14px;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: none;
-  background: #00acc1;
-  color: #333;
+  background: #5da2bd;
+  color: #111;
   cursor: pointer;
-  min-width: 104px;
-  min-height: 44px;
+  min-width: 72px;
+  min-height: 56px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   -webkit-tap-highlight-color: transparent;
 }
 .work-end-btn {
-  background: #00acc1;
-  color: #333;
+  background: #5da2bd;
+  color: #111;
 }
 /* 終了確認モーダル */
 .end-confirm-modal-overlay {
