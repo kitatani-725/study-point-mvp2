@@ -1,6 +1,15 @@
 {
-  "originHash" : "46d780fdfcbabc2b29b4ff6912c55c0bd52520ef28e19080d82e0cdc4350882a",
+  "originHash" : "fc4514283caca77026b0ab6d79a7b478d5d1f8103211cb935769723a3b1b6ec4",
   "pins" : [
+    {
+      "identity" : "adsglobalpackage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/bytedance/AdsGlobalPackage",
+      "state" : {
+        "revision" : "37c5b9445cfab36d021834fdcba748f3ff3f85d0",
+        "version" : "8.1.0-release.9"
+      }
+    },
     {
       "identity" : "capacitor-swift-pm",
       "kind" : "remoteSourceControl",

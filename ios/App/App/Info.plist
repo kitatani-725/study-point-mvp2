@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>PangleAppId</key>
+	<string></string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>広告の最適化のため、識別子の利用許可をお願いすることがあります。</string>
 </dict>
 </plist>

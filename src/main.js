@@ -1,4 +1,5 @@
 import './style.css'
+import './lib/pangleNativeBridge.js'
 import { supabase } from './lib/supabase'
 import { AD_PLACEMENTS, logAdConfigInDev } from './lib/adConfig.js'
 import {
@@ -7,6 +8,15 @@ import {
   schedulePangleBannerRefresh,
 } from './lib/pangleBanner.js'
 import { checkWorkToolPresence, hasAnyAllowedWorkTool } from './lib/workToolCheck.js'
+import {
+  bindOnboardingDelegation,
+  buildOnboardingOverlayHtml,
+  markOnboardingComplete,
+  migrateOnboardingForLegacyUser,
+  ONBOARDING_LAST_INDEX,
+  ONBOARDING_SLIDE_IDS,
+  shouldShowOnboarding,
+} from './lib/onboarding.js'
 
 /** iPhone Safari 等のピンチ拡大を抑止（viewport と併用） */
 function installViewportZoomGuard() {
@@ -126,6 +136,9 @@ let state = {
   username: DEFAULT_USERNAME,
   /** アカウント画面のユーザー名変更モーダル */
   nicknameModalOpen: false,
+  /** 初回起動オンボーディング（300.svg〜304.svg） */
+  onboardingActive: false,
+  onboardingStep: 0,
   /** アカウント画面のアイコン選択モーダル */
   iconModalOpen: false,
   /** 選択中ポイ丸（icon_master） */
@@ -4082,7 +4095,7 @@ function buildWorkScreenHtml() {
         <div class="work-buttons">
           <div class="dark-mode-toggle" data-dark-mode-toggle>
             <span class="dark-mode-label" data-work-dark-label>暗幕 OFF</span>
-            <button class="dark-mode-switch" type="button" data-btn-dark-toggle data-work-dark-toggle aria-pressed="false"></button>
+            <button class="dark-mode-switch" type="button" data-btn-dark-toggle data-work-dark-toggle aria-pressed="false" aria-label="暗幕 OFF"></button>
           </div>
           <button class="work-pause-btn" type="button" data-btn-pause-resume data-work-pause-button>一時停止</button>
           <button class="work-end-btn" type="button" data-btn-end-work data-work-end-button>終了</button>
@@ -4235,6 +4248,7 @@ function patchWorkScreen() {
   if (darkSwitch) {
     darkSwitch.classList.toggle('is-on', ui.darkMode)
     darkSwitch.setAttribute('aria-pressed', ui.darkMode ? 'true' : 'false')
+    darkSwitch.setAttribute('aria-label', `暗幕 ${ui.darkMode ? 'ON' : 'OFF'}`)
   }
 
   console.log('[work:patch] dark')
@@ -5402,7 +5416,7 @@ let modalAppDelegationBound = false
 
 /** 画面上部モーダル表示中は背面をスクロール不可にする */
 const APP_SCROLL_LOCK_SELECTOR =
-  '.app-modal-overlay.app-modal-open, .app-modal-overlay.modal-open, .modal-overlay.modal-open, .modal-overlay.app-modal-open, .reward-history-overlay.app-modal-open, [data-referral-overlay].app-modal-open, [data-nickname-modal-overlay].app-modal-open, [data-icon-modal-overlay].app-modal-open, .mission-overlay.mission-overlay--open, .mission-overlay.app-modal-open'
+  '.app-modal-overlay.app-modal-open, .app-modal-overlay.modal-open, .modal-overlay.modal-open, .modal-overlay.app-modal-open, .reward-history-overlay.app-modal-open, [data-referral-overlay].app-modal-open, [data-nickname-modal-overlay].app-modal-open, [data-icon-modal-overlay].app-modal-open, .mission-overlay.mission-overlay--open, .mission-overlay.app-modal-open, [data-onboarding-overlay]'
 
 function syncBodyScrollLock() {
   const app = document.querySelector('#app')
@@ -6055,6 +6069,10 @@ async function handleAccountApplyCode() {
 async function handleAccountSaveUsername() {
   const nicknameInput = document.querySelector('[data-nickname-input]')
   const raw = nicknameInput?.value ?? ''
+  await saveUsernameFromInput(raw, { closeNicknameModal: true })
+}
+
+async function saveUsernameFromInput(raw, { closeNicknameModal = false } = {}) {
   const next = normalizeUsernameForStorage(raw)
   const userId = state.userId || getUserId()
   return withLoading('saveNickname', async () => {
@@ -6063,17 +6081,108 @@ async function handleAccountSaveUsername() {
     )
     if (!res.ok) {
       notifyApiFailure(res.error, 'save')
-      return
+      return false
     }
     state.username = next
     markRegistrationComplete()
     saveState()
-    closeModalByType(MODAL_TYPES.NICKNAME)
+    if (closeNicknameModal) closeModalByType(MODAL_TYPES.NICKNAME)
+    return true
   }).catch((e) => {
     console.error('[user] update username failed', e?.message || String(e), e)
     notifyApiFailure(e, 'save')
+    return false
   })
 }
+
+function renderOnboardingOverlay() {
+  if (!state.onboardingActive) {
+    document.querySelector('[data-onboarding-overlay]')?.remove()
+    syncBodyScrollLock()
+    return
+  }
+
+  const html = buildOnboardingOverlayHtml(state.onboardingStep, {
+    usernameMaxLen: USERNAME_MAX_LEN,
+    defaultUsername: DEFAULT_USERNAME,
+  })
+  const existing = document.querySelector('[data-onboarding-overlay]')
+  if (existing) {
+    existing.outerHTML = html
+  } else {
+    document.body.insertAdjacentHTML('beforeend', html)
+  }
+  syncBodyScrollLock()
+
+  if (state.onboardingStep === ONBOARDING_LAST_INDEX) {
+    const input = document.querySelector('[data-onboarding-nickname-input]')
+    if (input) {
+      if (!input.value) input.value = state.username === DEFAULT_USERNAME ? '' : state.username
+      if (!input.dataset.focusedOnce) {
+        input.dataset.focusedOnce = '1'
+        requestAnimationFrame(() => input.focus())
+      }
+    }
+  }
+}
+
+function finishOnboarding() {
+  state.onboardingActive = false
+  state.onboardingStep = 0
+  markOnboardingComplete()
+  renderOnboardingOverlay()
+}
+
+async function finishOnboardingAndGoHome({ saveNickname = false } = {}) {
+  if (saveNickname) {
+    const input = document.querySelector('[data-onboarding-nickname-input]')
+    const raw = input?.value ?? ''
+    const ok = await saveUsernameFromInput(raw, { closeNicknameModal: false })
+    if (!ok) return
+  } else {
+    const ok = await saveUsernameFromInput('', { closeNicknameModal: false })
+    if (!ok) return
+  }
+  finishOnboarding()
+  state.screen = 'home'
+  render({ reason: 'onboarding-complete', forceFull: true })
+}
+
+function handleOnboardingNext() {
+  if (state.onboardingStep < ONBOARDING_LAST_INDEX) {
+    state.onboardingStep += 1
+    renderOnboardingOverlay()
+    return
+  }
+  void finishOnboardingAndGoHome({ saveNickname: true })
+}
+
+function handleOnboardingSkip() {
+  if (state.onboardingStep < ONBOARDING_LAST_INDEX) {
+    state.onboardingStep = ONBOARDING_LAST_INDEX
+    renderOnboardingOverlay()
+    return
+  }
+  void finishOnboardingAndGoHome({ saveNickname: false })
+}
+
+function maybeStartOnboardingAfterBoot() {
+  migrateOnboardingForLegacyUser({
+    username: state.username,
+    defaultUsername: DEFAULT_USERNAME,
+    registrationComplete: isRegistrationComplete(),
+  })
+  if (!shouldShowOnboarding()) return
+  state.onboardingActive = true
+  state.onboardingStep = 0
+  renderOnboardingOverlay()
+  console.log('[onboarding] started', { step: state.onboardingStep, slide: ONBOARDING_SLIDE_IDS[0] })
+}
+
+bindOnboardingDelegation({
+  onNext: handleOnboardingNext,
+  onSkip: handleOnboardingSkip,
+})
 
 function patchAccountScreen() {
   syncChromeBodyClasses()
@@ -7063,6 +7172,7 @@ function render(options = {}) {
   applyMissionPanelScale()
   schedulePangleBannerRefresh()
   } finally {
+    renderOnboardingOverlay()
     syncBodyScrollLock()
     cleanupOrphanOverlays()
     cleanupOrphanToasts()
@@ -8743,6 +8853,8 @@ syncScreenChromeBg(state.screen)
     points: state.points,
     pigTickets: state.pigTickets,
   })
+
+  maybeStartOnboardingAfterBoot()
 
   void runBootLayer1()
 })().catch((e) =>

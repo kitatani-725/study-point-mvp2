@@ -12,6 +12,7 @@
  *
  * ブリッジ未実装・env 未設定・読み込み失敗時は既存のグレー仮枠を表示します。
  */
+import { Capacitor } from '@capacitor/core'
 import {
   AD_PLACEMENTS,
   detectAdPlatform,
@@ -57,8 +58,14 @@ function maskAdId(id) {
   return `****${id.slice(-4)}`
 }
 
+function shouldLogBannerDiagnostics() {
+  if (import.meta.env.DEV) return true
+  if (import.meta.env.VITE_AD_DEBUG_LOG === '1') return true
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+}
+
 function logBannerDev(placementKey, message, extra) {
-  if (!import.meta.env.DEV) return
+  if (!shouldLogBannerDiagnostics()) return
   if (extra !== undefined) {
     console.log(`[ad:banner] ${placementKey} ${message}`, extra)
     return
@@ -274,11 +281,15 @@ export async function preloadHomeBannerAd() {
 
 /** 開発時: バナー枠の設定状況とブリッジ有無をログ */
 export function logBannerPlacementsInDev() {
-  if (!import.meta.env.DEV) return
+  if (!shouldLogBannerDiagnostics()) return
 
   const platform = detectAdPlatform()
   const bridge = getPangleBannerBridge()
   console.log('[ad:banner] bridge', bridge ? 'available' : 'unavailable')
+  console.log(
+    '[ad:banner] isAvailable',
+    bridge && typeof bridge.isAvailable === 'function' ? bridge.isAvailable() : 'n/a'
+  )
 
   for (const placementKey of BANNER_PLACEMENT_KEYS) {
     const placementId = getPanglePlacementId(placementKey, platform)

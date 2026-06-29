@@ -94,8 +94,42 @@ const APP_ID_ENV_KEYS = {
   ios: 'VITE_PANGLE_IOS_APP_ID',
 }
 
+/**
+ * Vite は `import.meta.env[variableKey]` をビルド時に置換しない。
+ * Capacitor iOS 向け production ビルドでも .env を読むため、静的キー参照を列挙する。
+ */
+const PANGLE_STATIC_ENV = {
+  VITE_PANGLE_ANDROID_APP_ID: import.meta.env.VITE_PANGLE_ANDROID_APP_ID,
+  VITE_PANGLE_IOS_APP_ID: import.meta.env.VITE_PANGLE_IOS_APP_ID,
+  VITE_PANGLE_ANDROID_BANNER_HOME: import.meta.env.VITE_PANGLE_ANDROID_BANNER_HOME,
+  VITE_PANGLE_IOS_BANNER_HOME: import.meta.env.VITE_PANGLE_IOS_BANNER_HOME,
+  VITE_PANGLE_ANDROID_BANNER_ACCOUNT: import.meta.env.VITE_PANGLE_ANDROID_BANNER_ACCOUNT,
+  VITE_PANGLE_IOS_BANNER_ACCOUNT: import.meta.env.VITE_PANGLE_IOS_BANNER_ACCOUNT,
+  VITE_PANGLE_ANDROID_BANNER_REWARD_MODAL: import.meta.env.VITE_PANGLE_ANDROID_BANNER_REWARD_MODAL,
+  VITE_PANGLE_IOS_BANNER_REWARD_MODAL: import.meta.env.VITE_PANGLE_IOS_BANNER_REWARD_MODAL,
+  VITE_PANGLE_ANDROID_BANNER_ROULETTE: import.meta.env.VITE_PANGLE_ANDROID_BANNER_ROULETTE,
+  VITE_PANGLE_IOS_BANNER_ROULETTE: import.meta.env.VITE_PANGLE_IOS_BANNER_ROULETTE,
+  VITE_PANGLE_ANDROID_BANNER_GAME: import.meta.env.VITE_PANGLE_ANDROID_BANNER_GAME,
+  VITE_PANGLE_IOS_BANNER_GAME: import.meta.env.VITE_PANGLE_IOS_BANNER_GAME,
+  VITE_PANGLE_ANDROID_REWARDED_80PT: import.meta.env.VITE_PANGLE_ANDROID_REWARDED_80PT,
+  VITE_PANGLE_IOS_REWARDED_80PT: import.meta.env.VITE_PANGLE_IOS_REWARDED_80PT,
+  VITE_PANGLE_ANDROID_REWARDED_BOOST: import.meta.env.VITE_PANGLE_ANDROID_REWARDED_BOOST,
+  VITE_PANGLE_IOS_REWARDED_BOOST: import.meta.env.VITE_PANGLE_IOS_REWARDED_BOOST,
+  VITE_PANGLE_ANDROID_REWARDED_HOURGLASS: import.meta.env.VITE_PANGLE_ANDROID_REWARDED_HOURGLASS,
+  VITE_PANGLE_IOS_REWARDED_HOURGLASS: import.meta.env.VITE_PANGLE_IOS_REWARDED_HOURGLASS,
+  VITE_PANGLE_ANDROID_INTERSTITIAL_APP_RESUME:
+    import.meta.env.VITE_PANGLE_ANDROID_INTERSTITIAL_APP_RESUME,
+  VITE_PANGLE_IOS_INTERSTITIAL_APP_RESUME: import.meta.env.VITE_PANGLE_IOS_INTERSTITIAL_APP_RESUME,
+  VITE_PANGLE_ANDROID_INTERSTITIAL_WORK_END: import.meta.env.VITE_PANGLE_ANDROID_INTERSTITIAL_WORK_END,
+  VITE_PANGLE_IOS_INTERSTITIAL_WORK_END: import.meta.env.VITE_PANGLE_IOS_INTERSTITIAL_WORK_END,
+  VITE_PANGLE_ANDROID_INTERSTITIAL_ROULETTE_3SPINS:
+    import.meta.env.VITE_PANGLE_ANDROID_INTERSTITIAL_ROULETTE_3SPINS,
+  VITE_PANGLE_IOS_INTERSTITIAL_ROULETTE_3SPINS:
+    import.meta.env.VITE_PANGLE_IOS_INTERSTITIAL_ROULETTE_3SPINS,
+}
+
 function readEnvString(key) {
-  const value = import.meta.env[key]
+  const value = PANGLE_STATIC_ENV[key]
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed || null
@@ -139,9 +173,23 @@ function maskAdId(id) {
   return `****${id.slice(-4)}`
 }
 
-/** 開発時のみ: OS 判定と App / Placement ID の設定有無をログ出力 */
+function shouldLogAdConfigDiagnostics() {
+  if (import.meta.env.DEV) return true
+  if (import.meta.env.VITE_AD_DEBUG_LOG === '1') return true
+  try {
+    const ua = navigator.userAgent || ''
+    const isIosUa =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    return isIosUa && /Capacitor/i.test(ua)
+  } catch {
+    return false
+  }
+}
+
+/** 開発時 / iOS ネイティブ実機テスト時: OS 判定と App / Placement ID の設定有無をログ出力 */
 export function logAdConfigInDev() {
-  if (!import.meta.env.DEV) return
+  if (!shouldLogAdConfigDiagnostics()) return
 
   const platform = detectAdPlatform()
   const appId = getPangleAppId(platform)
