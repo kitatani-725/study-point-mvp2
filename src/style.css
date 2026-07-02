@@ -17,8 +17,9 @@
   );
   --home-scroll-padding-bottom: calc(var(--bottom-fixed-chrome) + 12px);
   /* 画面背景（ステータスバー / safe-area 含む外枠と各画面本体で共通） */
-  --app-bg-home: #f2f2f2;
-  --app-bg-surface: #ffffff;
+  --app-bg-base: #F8F6EF;
+  --app-bg-home: var(--app-bg-base);
+  --app-bg-surface: var(--app-bg-base);
   --app-bg-work: #111111;
   --screen-chrome-bg: var(--app-bg-surface);
   /* 重なり順（footer < modal < toast） */
@@ -56,6 +57,9 @@ html {
   touch-action: manipulation;
   margin: 0;
   padding: 0;
+  width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
   height: 100%;
   background-color: var(--screen-chrome-bg);
 }
@@ -91,8 +95,10 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   height: 100%;
-  min-height: 100%;
   background-color: var(--screen-chrome-bg);
   overflow: hidden;
   touch-action: manipulation;
@@ -108,12 +114,24 @@ body::before {
   z-index: 9999;
   pointer-events: none;
 }
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-area-bottom);
+  background-color: var(--screen-chrome-bg);
+  z-index: 999;
+  pointer-events: none;
+}
 
 #app {
   width: 100%;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  min-height: 100dvh;
   height: 100%;
   max-height: 100dvh;
   background-color: var(--screen-chrome-bg);
@@ -302,9 +320,9 @@ body.garapon-screen-active .app-banner-under-footer {
   height: 40px;
   margin: 0;
   padding: 0 10px;
-  border: 1.2px solid #000;
+  border: 1.2px solid #c4c4c4;
   border-radius: 10px;
-  background: #fff;
+  background: #FFFDF8;
   color: #111;
   font-size: 14px;
   font-weight: 700;
@@ -948,7 +966,8 @@ body.garapon-screen-active .app-banner-under-footer {
   justify-content: center;
   gap: 16px;
   padding: 8px 12px;
-  border: 2px solid #000;
+  background: #FFFDF8;
+  border: 2px solid #E3B624;
   border-radius: 12px;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -1417,7 +1436,8 @@ body.garapon-screen-active .app-banner-under-footer {
   top: 876px;
   width: 893.8px;
   height: 143.8px;
-  background: #e0e0e0;
+  background: #FDF7D8;
+  border: 2px solid #E3B624;
   color: #333;
   border-radius: 12px;
 }
@@ -1428,8 +1448,8 @@ body.garapon-screen-active .app-banner-under-footer {
   top: 1039px;
   width: 364.8px;
   height: 364.8px;
-  border-radius: 50%;
-  background: lightblue;
+  background: url('/assets/320.svg') center / 100% 100% no-repeat;
+  color: transparent;
   font-size: 48px;
 }
 
@@ -1459,7 +1479,7 @@ body.garapon-screen-active .app-banner-under-footer {
   height: var(--footer-stack-height);
   padding: 0 env(safe-area-inset-right, 0px) var(--safe-area-bottom) env(safe-area-inset-left, 0px);
   overflow: hidden;
-  background: white;
+  background: var(--app-bg-base);
   z-index: var(--z-footer);
   transform: translateY(var(--footer-visual-offset)) translateZ(0);
   -webkit-transform: translateY(var(--footer-visual-offset)) translateZ(0);
@@ -1536,7 +1556,7 @@ body.garapon-screen-active .app-banner-under-footer {
   width: 320px;
   height: var(--banner-under-footer-height);
   max-width: 100%;
-  background: #e8e8e8;
+  background: var(--app-bg-base);
   z-index: 1001;
   box-sizing: border-box;
 }
@@ -2471,7 +2491,7 @@ body.is-ios .work-screen .workHUD .dark-mode-toggle {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #bdbdbd;
+  border: 1px solid #E3B624;
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
@@ -3005,9 +3025,9 @@ body.is-ios .work-screen .workHUD .dark-mode-toggle {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  border: 1px solid #000;
+  border: 1px solid #c4c4c4;
   border-radius: 12px;
-  background: #fff;
+  background: #FFFDF8;
   box-sizing: border-box;
   min-width: 0;
 }
@@ -3043,8 +3063,8 @@ body.is-ios .work-screen .workHUD .dark-mode-toggle {
   padding: 12px 16px;
   font-size: 16px;
   border-radius: 8px;
-  border: none;
-  background: #00acc1;
+  border: 1px solid #c4c4c4;
+  background: #FFFDF8;
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
@@ -3055,9 +3075,9 @@ body.is-ios .work-screen .workHUD .dark-mode-toggle {
   padding: 14px 20px;
   font-size: 16px;
   text-align: center;
-  border: 1px solid #000;
+  border: 1px solid #c4c4c4;
   border-radius: 12px;
-  background: #fff;
+  background: #FFFDF8;
   color: #333;
   cursor: pointer;
   box-sizing: border-box;
@@ -3180,7 +3200,7 @@ button.account-btn.account-btn-exchange {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--app-bg-base);
   box-sizing: border-box;
 }
 .onboarding-stage {
@@ -3220,35 +3240,32 @@ button.account-btn.account-btn-exchange {
   height: 9%;
 }
 .onboarding-nickname-wrap {
-  display: none;
   position: absolute;
   z-index: 2;
-  left: 26.4%;
-  right: 29%;
-  top: 52.55%;
-  height: 1.45%;
-}
-.onboarding-overlay--nickname .onboarding-nickname-wrap {
-  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 .onboarding-nickname-input {
+  display: block;
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0 6px;
+  padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
-  color: #333;
-  font-size: clamp(13px, 3.6vw, 16px);
-  line-height: 1.2;
-  text-align: center;
+  color: #333333;
+  font-size: 16px;
+  line-height: normal;
+  text-align: left;
   box-sizing: border-box;
   outline: none;
-}
-.onboarding-nickname-input::placeholder {
-  color: #aaa;
+  -webkit-appearance: none;
+  appearance: none;
+  caret-color: #333333;
 }
 .onboarding-nickname-input:focus {
-  background: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  outline: none;
 }

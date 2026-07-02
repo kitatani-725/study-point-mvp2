@@ -15,6 +15,7 @@ import {
   migrateOnboardingForLegacyUser,
   ONBOARDING_LAST_INDEX,
   ONBOARDING_SLIDE_IDS,
+  focusOnboardingNicknameInput,
   shouldShowOnboarding,
 } from './lib/onboarding.js'
 
@@ -66,7 +67,7 @@ const STORAGE_KEYS = {
   missionClaims: 'sp_mission_claims', // { "missionId": "YYYY-MM-DD" } 受け取り済み日
   missionLastLogin: 'sp_mission_last_login', // ログインミッション用 'YYYY-MM-DD'
   loginDays: 'sp_login_days', // { "YYYY-MM-DD": true } 累計ログイン日
-  gameGiftClaimDate: 'sp_game_gift_claim_date', // プレゼント（120）受取日 'YYYY-MM-DD'（当日なら 121 表示・無効）
+  gameGiftClaimDate: 'sp_game_gift_claim_date', // プレゼント（321）受取日 'YYYY-MM-DD'（当日なら 121 表示・無効）
   /** users.username のローカルキャッシュ（表示高速化。正式な保存先は Supabase） */
   usernameCache: 'sp_username_cache',
   /** 互換: 旧ニックネームキー（初回のみ読み込みに使用） */
@@ -92,7 +93,7 @@ const PRIVACY_POLICY_URL =
 const DEFAULT_USERNAME = '名無し'
 const USERNAME_MAX_LEN = 20
 const MAX_HOURGLASSES = 7
-const DEFAULT_HOURGLASSES = 4
+const DEFAULT_HOURGLASSES = 0
 /** 通常作業: 砂時計1個あたりの必要作業時間（秒） */
 const WORK_SECONDS_PER_HOURGLASS = 25 * 60
 /** ブースト中: 砂時計1個あたりの必要作業時間（秒） */
@@ -4826,7 +4827,7 @@ function patchGameGiftButton() {
     giftClaimed ? '本日のプレゼントは受け取り済みです' : 'プレゼントボックス'
   )
   const img = btn.querySelector('.game-gift-img')
-  if (img) img.src = `/assets/${giftClaimed ? '121' : '120'}.svg`
+  if (img) img.src = `/assets/${giftClaimed ? '121' : '321'}.svg`
 }
 
 function patchGameRewardOverlay() {
@@ -5425,14 +5426,14 @@ function syncBodyScrollLock() {
 }
 
 const SCREEN_CHROME_BG = {
-  home: '#ffffff',
-  game: '#ffffff',
-  garapon: '#ffffff',
-  account: '#ffffff',
-  calendar: '#ffffff',
-  worklog: '#ffffff',
+  home: '#F8F6EF',
+  game: '#F8F6EF',
+  garapon: '#F8F6EF',
+  account: '#F8F6EF',
+  calendar: '#F8F6EF',
+  worklog: '#F8F6EF',
   work: '#111111',
-  result: '#f2f2f2',
+  result: '#F8F6EF',
 }
 
 /** 画面ごとに html / safe-area / theme-color の背景を各画面本体と揃える */
@@ -6104,7 +6105,6 @@ function renderOnboardingOverlay() {
 
   const html = buildOnboardingOverlayHtml(state.onboardingStep, {
     usernameMaxLen: USERNAME_MAX_LEN,
-    defaultUsername: DEFAULT_USERNAME,
   })
   const existing = document.querySelector('[data-onboarding-overlay]')
   if (existing) {
@@ -6116,12 +6116,12 @@ function renderOnboardingOverlay() {
 
   if (state.onboardingStep === ONBOARDING_LAST_INDEX) {
     const input = document.querySelector('[data-onboarding-nickname-input]')
-    if (input) {
-      if (!input.value) input.value = state.username === DEFAULT_USERNAME ? '' : state.username
-      if (!input.dataset.focusedOnce) {
-        input.dataset.focusedOnce = '1'
-        requestAnimationFrame(() => input.focus())
-      }
+    if (input && !input.value) {
+      input.value = state.username === DEFAULT_USERNAME ? '' : state.username
+    }
+    if (input && !input.dataset.focusedOnce) {
+      input.dataset.focusedOnce = '1'
+      focusOnboardingNicknameInput()
     }
   }
 }
@@ -6954,14 +6954,16 @@ function render(options = {}) {
   if (screen === 'game') {
     const giftClaimed = isGameGiftClaimedToday()
     const secondaryIds = ['223', '221', '222', '224', '225']
+    const secondaryButtonAssets = { '223': '324', '221': '322', '222': '323', '224': '325', '225': '326' }
     const secondaryButtons = secondaryIds
       .map(
         (id, idx) => {
           const tops = [416.4, 477.6, 538, 599, 660.2]
           const top = tops[idx] ?? (366.4 + idx * 61.2)
+          const assetId = secondaryButtonAssets[id] ?? id
           return `
       <button type="button" class="game-btn" data-game-slot="${id}" data-game-top="${top}" aria-label="ゲーム ${id}">
-        <img src="/assets/${id}.svg" alt="" class="game-btn-img" decoding="async" />
+        <img src="/assets/${assetId}.svg" alt="" class="game-btn-img" decoding="async" />
       </button>`
         }
       )
@@ -6987,7 +6989,7 @@ function render(options = {}) {
           </div>
 
           <button type="button" class="game-garapon" data-game-garapon aria-label="豚ガラポンはこちら">
-            <img src="/assets/150.svg" alt="" class="game-garapon-img" decoding="async" />
+            <img src="/assets/330.svg" alt="" class="game-garapon-img" decoding="async" />
           </button>
 
           <img src="/assets/140.svg" alt="" class="game-banner-140" decoding="async" />
@@ -7003,7 +7005,7 @@ function render(options = {}) {
           <div class="game-gift-wrap">
             ${giftClaimed ? '' : '<img src="/assets/200.svg" alt="" class="game-gift-badge" decoding="async" aria-hidden="true" />'}
             <button type="button" class="game-gift" data-game-gift aria-label="${giftClaimed ? '本日のプレゼントは受け取り済みです' : 'プレゼントボックス'}" ${giftClaimed ? 'disabled' : ''}>
-              <img src="/assets/${giftClaimed ? '121' : '120'}.svg" alt="" class="game-gift-img" width="320" height="320" decoding="async" />
+              <img src="/assets/${giftClaimed ? '121' : '321'}.svg" alt="" class="game-gift-img" width="320" height="320" decoding="async" />
             </button>
           </div>
 

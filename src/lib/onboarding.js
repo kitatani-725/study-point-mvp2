@@ -6,6 +6,21 @@ export const ONBOARDING_SLIDE_IDS = ['300', '301', '302', '303', '304']
 
 export const ONBOARDING_LAST_INDEX = ONBOARDING_SLIDE_IDS.length - 1
 
+/**
+ * 304.svg デザイン座標（540×960px）
+ * 画像内の黄色枠の上に透明 input を重ねる（新しい枠は作らない）
+ */
+export const NICKNAME_FIELD_DESIGN = {
+  canvasW: 540,
+  canvasH: 960,
+  /** 入力文字の開始位置 */
+  textX: 92.5,
+  textY: 607,
+  /** タップ・入力エリア（文字開始点から黄色枠右端付近まで） */
+  width: 292.5,
+  height: 40,
+}
+
 export function isOnboardingComplete() {
   try {
     return localStorage.getItem(ONBOARDING_STORAGE_KEY) === 'true'
@@ -40,10 +55,21 @@ export function getOnboardingSlidePath(slideId) {
   return `/assets/${slideId}.svg`
 }
 
-export function buildOnboardingOverlayHtml(stepIndex, { usernameMaxLen, defaultUsername }) {
+export function focusOnboardingNicknameInput() {
+  const input = document.querySelector('[data-onboarding-nickname-input]')
+  if (!input) return
+  requestAnimationFrame(() => input.focus())
+}
+
+export function buildOnboardingOverlayHtml(stepIndex, { usernameMaxLen }) {
   const slideId = ONBOARDING_SLIDE_IDS[stepIndex] ?? ONBOARDING_SLIDE_IDS[0]
   const isNicknameSlide = stepIndex === ONBOARDING_LAST_INDEX
   const nextLabel = stepIndex >= 3 ? 'はじめる' : '次へ'
+  const f = NICKNAME_FIELD_DESIGN
+  const topPct = ((f.textY / f.canvasH) * 100).toFixed(4)
+  const leftPct = ((f.textX / f.canvasW) * 100).toFixed(4)
+  const widthPct = ((f.width / f.canvasW) * 100).toFixed(4)
+  const heightPct = ((f.height / f.canvasH) * 100).toFixed(4)
 
   return `
 <div class="onboarding-overlay${isNicknameSlide ? ' onboarding-overlay--nickname' : ''}" data-onboarding-overlay>
@@ -68,17 +94,26 @@ export function buildOnboardingOverlayHtml(stepIndex, { usernameMaxLen, defaultU
       data-onboarding-next
       aria-label="${nextLabel}"
     ></button>
-    <div class="onboarding-nickname-wrap" data-onboarding-nickname-wrap>
+    ${
+      isNicknameSlide
+        ? `
+    <div
+      class="onboarding-nickname-wrap"
+      data-onboarding-nickname-wrap
+      style="top:${topPct}%;left:${leftPct}%;width:${widthPct}%;height:${heightPct}%"
+    >
       <input
         type="text"
         class="onboarding-nickname-input"
         data-onboarding-nickname-input
         maxlength="${usernameMaxLen}"
         autocomplete="username"
-        placeholder="${defaultUsername}"
         aria-label="ニックネーム"
+        autofocus
       />
-    </div>
+    </div>`
+        : ''
+    }
   </div>
 </div>`
 }

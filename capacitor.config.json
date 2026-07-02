@@ -2,6 +2,7 @@
   "appId": "com.wakupork.studypoint",
   "appName": "ワクポク",
   "webDir": "dist",
+  "backgroundColor": "#F8F6EF",
   "server": {
     "androidScheme": "https"
   },
